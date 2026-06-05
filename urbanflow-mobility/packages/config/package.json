@@ -1,0 +1,9 @@
+{
+  "name": "@urbanflow/config",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    "./prettier": "./prettier.js",
+    "./tsconfig": "./tsconfig.json"
+  }
+}

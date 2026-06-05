@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Design System — UrbanFlow */
+  --color-primary: #1a5f7a;
+  --color-secondary: #2d7d46;
+  --color-accent: #b85c00;
+  --color-bg: #f7f9fc;
+  --color-text: #0f1b2d;
+  --color-surface: #ffffff;
+  --color-muted: #6b7280;
+
+  /* Modes de transport */
+  --color-velo: #16a34a;
+  --color-bus: #1d4ed8;
+  --color-trottinette: #0891b2;
+  --color-marche: #7c3aed;
+  --color-metro: #4f46e5;
+  --color-tram: #b45309;
+
+  /* Spacing (système 4px) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Border Radius */
+  --radius-card: 8px;
+  --radius-btn: 24px;
+  --radius-badge: 999px;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 16px;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* PWA — touch friendly */
+button,
+a {
+  touch-action: manipulation;
+}
+
+/* Focus visible pour WCAG 2.1 AA */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

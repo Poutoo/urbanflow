@@ -1,0 +1,35 @@
+{
+  "name": "urbanflow-mobility",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
+    "prisma:migrate": "pnpm --filter backend prisma migrate dev",
+    "prisma:studio": "pnpm --filter backend prisma studio",
+    "prisma:generate": "pnpm --filter backend prisma generate"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "prettier": "^3.3.3",
+    "eslint": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/client",
+      "@prisma/engines",
+      "argon2",
+      "prisma",
+      "unrs-resolver"
+    ]
+  }
+}
