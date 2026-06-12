@@ -25,14 +25,34 @@ export const ADEME_FACTORS: Record<string, number> = {
   default: 0.05,
 }
 
+// Navitia retourne des physical_mode avec casse variable et noms non normalisés
+const NAVITIA_MODE_MAP: Record<string, string> = {
+  tramway: 'tram',
+  'rapid transit': 'rapidtransit',
+  rapidtransit: 'rapidtransit',
+  localtrainfer: 'train',
+  localtrain: 'train',
+  longdistancetrain: 'train',
+  coach: 'bus',
+  ferry: 'default',
+  funicular: 'default',
+  cableway: 'default',
+}
+
+function normalizeMode(raw: string): string {
+  const lower = raw.toLowerCase().replace(/\s+/g, '')
+  return NAVITIA_MODE_MAP[lower] ?? NAVITIA_MODE_MAP[raw.toLowerCase()] ?? lower
+}
+
 @Injectable()
 export class Co2Service {
   calculateJourneyCo2(sections: NavitiaSection[]): number {
     return sections.reduce((total, section) => {
-      const mode =
+      const rawMode =
         section.type === 'public_transport'
-          ? (section.display_informations?.physical_mode?.toLowerCase() ?? 'default')
+          ? (section.display_informations?.physical_mode ?? 'default')
           : section.type
+      const mode = normalizeMode(rawMode)
       const factor = ADEME_FACTORS[mode] ?? ADEME_FACTORS['default']
       const distanceKm = (section.geojson?.length ?? 0) / 1000
       return total + factor * distanceKm
