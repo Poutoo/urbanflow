@@ -24,7 +24,9 @@ describe('NavitiaService', () => {
           provide: ConfigService,
           useValue: {
             get: (key: string) =>
-              key === 'NAVITIA_BASE_URL' ? 'https://api.navitia.io/v1' : 'test-api-key',
+              key === 'NAVITIA_BASE_URL'
+                ? 'https://prim.iledefrance-mobilites.fr/marketplace/navitia'
+                : 'test-api-key',
           },
         },
       ],

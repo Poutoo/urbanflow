@@ -23,7 +23,7 @@ export class NavitiaService {
   }
 
   async getJourneys(from: Coordinates, to: Coordinates, datetime: string): Promise<unknown[]> {
-    const url = `${this.baseUrl}/coverage/fr-idf/journeys`
+    const url = `${this.baseUrl}/journeys`
     const response = await firstValueFrom(
       this.http
         .get(url, {

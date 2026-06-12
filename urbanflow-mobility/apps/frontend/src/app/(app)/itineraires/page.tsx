@@ -54,7 +54,9 @@ function ItinerairesContent() {
       const dest = await geocodeAddress(toAddress)
       if (cancelled) return
       if (!dest) {
-        setError('Adresse introuvable. Essayez une adresse plus précise.')
+        setError(
+          `Adresse introuvable. Essayez un format précis, par exemple : "Tour Eiffel, Paris" ou "15 rue de Rivoli, Paris".`,
+        )
         setLoading(false)
         return
       }
@@ -75,8 +77,10 @@ function ItinerairesContent() {
         if (!res.ok) {
           setError(
             res.status === 401
-              ? 'Connexion requise pour rechercher un itinéraire.'
-              : `Erreur serveur (${res.status}). Réessayez.`,
+              ? 'Connexion requise. Reconnectez-vous avec email et mot de passe.'
+              : res.status === 404
+                ? 'Aucun itinéraire trouvé pour ce trajet. Essayez une autre destination.'
+                : 'Erreur lors du calcul. Vérifiez que le serveur est démarré.',
           )
           setLoading(false)
           return
