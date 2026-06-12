@@ -6,53 +6,70 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint src",
     "test": "jest",
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.9.1",
+    "@urbanflow/types": "workspace:*",
+    "axios": "^1.7.7",
     "next": "14.2.18",
+    "next-auth": "^5.0.0-beta.25",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "next-auth": "^5.0.0-beta.25",
-    "axios": "^1.7.7",
-    "zod": "^3.23.8",
     "react-hook-form": "^7.53.0",
-    "@hookform/resolvers": "^3.9.1",
-    "@urbanflow/types": "workspace:*"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/node": "^20.14.0",
-    "@types/react": "^18.3.5",
-    "@types/react-dom": "^18.3.0",
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
     "@types/jest": "^29.5.12",
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.61.0",
+    "@typescript-eslint/parser": "^8.61.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "14.2.18",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
-    "ts-jest": "^29.2.4",
-    "typescript": "^5.5.0",
-    "tailwindcss": "^3.4.13",
-    "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
-    "eslint": "^9.0.0",
-    "eslint-config-next": "14.2.18"
+    "tailwindcss": "^3.4.13",
+    "ts-jest": "^29.2.4",
+    "typescript": "^5.5.0"
   },
   "jest": {
     "testEnvironment": "jsdom",
-    "setupFilesAfterEnv": ["<rootDir>/jest.setup.ts"],
-    "testMatch": ["**/*.spec.ts", "**/*.spec.tsx"],
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup.ts"
+    ],
+    "testMatch": [
+      "**/*.spec.ts",
+      "**/*.spec.tsx"
+    ],
     "moduleNameMapper": {
       "^@/(.*)$": "<rootDir>/src/$1",
       "^@urbanflow/types$": "<rootDir>/../../packages/types/src/index.ts"
     },
     "transform": {
-      "^.+\\.(t|j)sx?$": ["ts-jest", { "tsconfig": "./tsconfig.test.json" }]
+      "^.+\\.(t|j)sx?$": [
+        "ts-jest",
+        {
+          "tsconfig": "./tsconfig.test.json"
+        }
+      ]
     },
-    "collectCoverageFrom": ["src/**/*.{ts,tsx}", "!src/**/*.d.ts"],
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}",
+      "!src/**/*.d.ts"
+    ],
     "coverageThreshold": {
-      "global": { "lines": 60 }
+      "global": {
+        "lines": 60
+      }
     }
   }
 }
