@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { HttpService } from '@nestjs/axios'
 import { firstValueFrom } from 'rxjs'
 import { CacheService } from '../cache/cache.service'
 
-interface GbfsStation {
+export interface GbfsStation {
   id: string
   name: string
   lat: number
@@ -14,6 +14,8 @@ interface GbfsStation {
 
 @Injectable()
 export class GbfsService {
+  private readonly logger = new Logger(GbfsService.name)
+
   private readonly STATIONS_URL =
     'https://velib-metropole-opendata.smoove.pro/opendata/Velib_Metropole/station_status.json'
   private readonly INFO_URL =
@@ -25,25 +27,30 @@ export class GbfsService {
   ) {}
 
   async getNearbyStations(lat: number, lng: number, radiusMeters = 400): Promise<GbfsStation[]> {
-    const cacheKey = `gbfs:nearby:${Math.round(lat * 100)},${Math.round(lng * 100)}`
+    const cacheKey = `gbfs:nearby:${Math.round(lat * 1000)},${Math.round(lng * 1000)}`
     const cached = await this.cache.get<GbfsStation[]>(cacheKey)
     if (cached) return cached
 
-    const [infoRes, statusRes] = await Promise.all([
-      firstValueFrom(this.http.get(this.INFO_URL)),
-      firstValueFrom(this.http.get(this.STATIONS_URL)),
-    ])
+    try {
+      const [infoRes, statusRes] = await Promise.all([
+        firstValueFrom(this.http.get(this.INFO_URL)),
+        firstValueFrom(this.http.get(this.STATIONS_URL)),
+      ])
 
-    const stations = this.mergeAndFilterNearby(
-      infoRes.data.data.stations as Record<string, unknown>[],
-      statusRes.data.data.stations as Record<string, unknown>[],
-      lat,
-      lng,
-      radiusMeters,
-    )
+      const stations = this.mergeAndFilterNearby(
+        infoRes.data.data.stations as Record<string, unknown>[],
+        statusRes.data.data.stations as Record<string, unknown>[],
+        lat,
+        lng,
+        radiusMeters,
+      )
 
-    await this.cache.set(cacheKey, stations, 30)
-    return stations
+      await this.cache.set(cacheKey, stations, 30)
+      return stations
+    } catch (err) {
+      this.logger.warn(`GBFS indisponible, retour tableau vide : ${(err as Error).message}`)
+      return []
+    }
   }
 
   private mergeAndFilterNearby(
@@ -71,7 +78,7 @@ export class GbfsService {
       .slice(0, 5)
   }
 
-  private distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
     const R = 6_371_000
     const dLat = ((lat2 - lat1) * Math.PI) / 180
     const dLng = ((lng2 - lng1) * Math.PI) / 180
