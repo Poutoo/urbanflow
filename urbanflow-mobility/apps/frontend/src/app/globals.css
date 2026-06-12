@@ -66,3 +66,10 @@ a {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
+
+/* Leaflet — masquer zoom +/- sur mobile (pinch-to-zoom natif) */
+@media (max-width: 767px) {
+  .leaflet-control-zoom {
+    display: none;
+  }
+}
