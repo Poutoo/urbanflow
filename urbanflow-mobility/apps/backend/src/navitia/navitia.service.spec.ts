@@ -41,11 +41,11 @@ describe('NavitiaService', () => {
     expect(params.to).toBe(`${TO.lng};${TO.lat}`)
   })
 
-  it('envoie le header Authorization avec la cle API', async () => {
+  it('envoie le header apikey avec la cle API', async () => {
     httpGet.mockReturnValue(of({ data: { journeys: [] } }))
     await service.getJourneys(FROM, TO, DATETIME)
     const headers = httpGet.mock.calls[0][1].headers
-    expect(headers.Authorization).toBe('test-api-key')
+    expect(headers.apikey).toBe('test-api-key')
   })
 
   it('retourne le tableau journeys de la reponse', async () => {

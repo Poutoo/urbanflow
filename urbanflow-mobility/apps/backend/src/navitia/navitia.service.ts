@@ -33,7 +33,7 @@ export class NavitiaService {
             datetime,
             count: 5,
           },
-          headers: { Authorization: this.apiKey },
+          headers: { apikey: this.apiKey },
         })
         .pipe(
           catchError((err: AxiosError) => {
