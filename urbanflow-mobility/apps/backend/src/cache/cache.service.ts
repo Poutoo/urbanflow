@@ -7,7 +7,9 @@ export class CacheService implements OnModuleDestroy {
   private readonly client: Redis
 
   constructor(private config: ConfigService) {
-    this.client = new Redis(this.config.get<string>('REDIS_URL')!)
+    this.client = new Redis(this.config.get<string>('REDIS_URL')!, {
+      enableOfflineQueue: false,
+    })
   }
 
   async get<T>(key: string): Promise<T | null> {

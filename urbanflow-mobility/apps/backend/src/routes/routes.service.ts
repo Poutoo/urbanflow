@@ -16,7 +16,7 @@ export class RoutesService {
   ) {}
 
   async searchRoutes(dto: SearchRoutesDto): Promise<SearchRoutesResult> {
-    const cacheKey = `routes:${dto.fromLat},${dto.fromLng}:${dto.toLat},${dto.toLng}`
+    const cacheKey = `routes:${dto.fromLat},${dto.fromLng}:${dto.toLat},${dto.toLng}:${dto.departureTime ?? 'now'}`
     const cached = await this.cache.get<SearchRoutesResult>(cacheKey)
     if (cached) return cached
 
