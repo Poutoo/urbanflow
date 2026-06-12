@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common'
 import { HttpService } from '@nestjs/axios'
 import { ConfigService } from '@nestjs/config'
-import { firstValueFrom } from 'rxjs'
+import { firstValueFrom, catchError, throwError } from 'rxjs'
+import type { AxiosError } from 'axios'
 
 interface Coordinates {
   lat: number
@@ -24,15 +25,28 @@ export class NavitiaService {
   async getJourneys(from: Coordinates, to: Coordinates, datetime: string): Promise<unknown[]> {
     const url = `${this.baseUrl}/coverage/fr-idf/journeys`
     const response = await firstValueFrom(
-      this.http.get(url, {
-        params: {
-          from: `${from.lng};${from.lat}`,
-          to: `${to.lng};${to.lat}`,
-          datetime,
-          count: 5,
-        },
-        headers: { Authorization: this.apiKey },
-      }),
+      this.http
+        .get(url, {
+          params: {
+            from: `${from.lng};${from.lat}`,
+            to: `${to.lng};${to.lat}`,
+            datetime,
+            count: 5,
+          },
+          headers: { Authorization: this.apiKey },
+        })
+        .pipe(
+          catchError((err: AxiosError) => {
+            const status = err.response?.status ?? HttpStatus.BAD_GATEWAY
+            const message =
+              status === HttpStatus.UNAUTHORIZED
+                ? 'Clé API Navitia invalide'
+                : status === HttpStatus.NOT_FOUND
+                  ? 'Zone géographique non couverte par Navitia'
+                  : `Erreur Navitia (${status})`
+            return throwError(() => new HttpException(message, status))
+          }),
+        ),
     )
     return (response.data.journeys as unknown[]) ?? []
   }
