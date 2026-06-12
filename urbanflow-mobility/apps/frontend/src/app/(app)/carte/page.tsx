@@ -1,15 +1,108 @@
-import { Metadata } from 'next';
+'use client'
+import dynamic from 'next/dynamic'
+import { useState, useEffect } from 'react'
+import { useGeolocation } from '@/hooks/useGeolocation'
 
-export const metadata: Metadata = { title: 'Carte — UrbanFlow' };
+const MapView = dynamic(
+  () => import('@/components/map/MapView').then((m) => m.MapView),
+  { ssr: false, loading: () => <div className="h-full w-full animate-pulse bg-gray-200" /> },
+)
+
+const PARIS_CENTER = { lat: 48.8566, lng: 2.3522 }
+const CONSENT_KEY = 'geo_consent'
 
 export default function CartePage() {
+  const [consentGiven, setConsentGiven] = useState<boolean | null>(null)
+  const [showModal, setShowModal] = useState(false)
+
+  useEffect(() => {
+    const stored = localStorage.getItem(CONSENT_KEY)
+    if (stored === 'true') {
+      setConsentGiven(true)
+    } else {
+      setShowModal(true)
+    }
+  }, [])
+
+  const geo = useGeolocation(consentGiven === true)
+
+  function handleAllow() {
+    localStorage.setItem(CONSENT_KEY, 'true')
+    setConsentGiven(true)
+    setShowModal(false)
+  }
+
+  function handleDeny() {
+    setConsentGiven(false)
+    setShowModal(false)
+  }
+
+  const mapLat = geo.lat ?? PARIS_CENTER.lat
+  const mapLng = geo.lng ?? PARIS_CENTER.lng
+
   return (
-    <div className="flex h-[calc(100vh-64px)] items-center justify-center bg-[#F7F9FC]">
-      <div className="text-center">
-        <div className="mb-4 text-6xl" aria-hidden="true">🗺️</div>
-        <h1 className="text-xl font-bold text-[#0F1B2D]">Carte interactive</h1>
-        <p className="mt-2 text-sm text-[#6B7280]">Disponible au Sprint 2 — intégration Leaflet.js</p>
+    <div className="relative h-[calc(100vh-64px)] w-full">
+      {/* Carte full-screen */}
+      <MapView userLat={mapLat} userLng={mapLng} />
+
+      {/* Barre de recherche overlay */}
+      <div className="absolute left-1/2 top-4 z-[1000] w-[90%] max-w-md -translate-x-1/2">
+        <div className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-lg">
+          <svg className="h-5 w-5 shrink-0 text-[#6B7280]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Où voulez-vous aller ?"
+            className="w-full bg-transparent text-sm text-[#0F1B2D] placeholder-[#6B7280] outline-none"
+            aria-label="Destination"
+          />
+        </div>
       </div>
+
+      {/* Indicateur d'erreur géolocalisation */}
+      {geo.error && consentGiven && (
+        <div className="absolute bottom-24 left-1/2 z-[1000] -translate-x-1/2 rounded-full bg-amber-100 px-4 py-2 text-sm text-amber-800 shadow">
+          Position approximative — {geo.error}
+        </div>
+      )}
+
+      {/* Modale RGPD géolocalisation */}
+      {showModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="geo-modal-title"
+          className="absolute inset-0 z-[2000] flex items-end justify-center bg-black/40 pb-8"
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl mx-4">
+            <div className="mb-3 flex items-center gap-3">
+              <span className="text-2xl" aria-hidden="true">📍</span>
+              <h2 id="geo-modal-title" className="text-base font-bold text-[#0F1B2D]">
+                Autoriser la géolocalisation
+              </h2>
+            </div>
+            <p className="mb-5 text-sm text-[#6B7280]">
+              UrbanFlow utilise votre position GPS pour afficher les itinéraires depuis votre position actuelle.
+              Vos données de localisation ne sont pas enregistrées ni partagées.
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleAllow}
+                className="w-full rounded-full bg-[#1A5F7A] py-3 text-sm font-semibold text-white transition hover:bg-[#155270]"
+              >
+                Autoriser
+              </button>
+              <button
+                onClick={handleDeny}
+                className="w-full rounded-full border border-[#6B7280] py-3 text-sm font-semibold text-[#6B7280] transition hover:bg-gray-50"
+              >
+                Refuser
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  );
+  )
 }
