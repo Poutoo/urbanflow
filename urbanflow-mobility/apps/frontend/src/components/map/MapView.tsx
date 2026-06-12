@@ -1,5 +1,4 @@
 'use client'
-import { useEffect } from 'react'
 import { MapContainer, TileLayer } from 'react-leaflet'
 import L from 'leaflet'
 import { UserMarker } from './UserMarker'
