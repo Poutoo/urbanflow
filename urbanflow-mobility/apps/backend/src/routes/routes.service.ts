@@ -33,23 +33,21 @@ export class RoutesService {
       this.gbfs.getNearbyStations(dto.fromLat, dto.fromLng),
     ])
 
-    const enriched = (journeys as Record<string, unknown>[]).map((journey) => ({
-      id: crypto.randomUUID(),
-      duration: journey['duration'] as number,
-      departureTime: journey['departure_date_time'] as string,
-      arrivalTime: journey['arrival_date_time'] as string,
-      co2Kg: this.co2.calculateJourneyCo2(
-        (journey['sections'] as Record<string, unknown>[]).map(this.toNavitiaSection),
-      ),
-      co2SavedKg: this.co2.calculateCo2Saved(
-        this.co2.calculateJourneyCo2(
-          (journey['sections'] as Record<string, unknown>[]).map(this.toNavitiaSection),
-        ),
-        ((journey['distances'] as Record<string, number> | undefined)?.['total'] ?? 0) / 1000,
-      ),
-      sections: this.formatSections(journey['sections'] as Record<string, unknown>[]),
-      isPmrAccessible: this.checkPmrAccessibility(journey['sections'] as Record<string, unknown>[]),
-    }))
+    const enriched = (journeys as Record<string, unknown>[]).map((journey) => {
+      const sections = journey['sections'] as Record<string, unknown>[]
+      const distanceKm = ((journey['distances'] as Record<string, number> | undefined)?.['total'] ?? 0) / 1000
+      const co2Kg = this.co2.calculateJourneyCo2(sections.map(this.toNavitiaSection))
+      return {
+        id: crypto.randomUUID(),
+        duration: journey['duration'] as number,
+        departureTime: journey['departure_date_time'] as string,
+        arrivalTime: journey['arrival_date_time'] as string,
+        co2Kg,
+        co2SavedKg: this.co2.calculateCo2Saved(co2Kg, distanceKm),
+        sections: this.formatSections(sections),
+        isPmrAccessible: this.checkPmrAccessibility(sections),
+      }
+    })
 
     const result: SearchRoutesResult = {
       fast: this.pickFastest([...enriched]),
