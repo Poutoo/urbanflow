@@ -64,8 +64,17 @@ export class RoutesService {
     return {
       type: s['type'] as string,
       display_informations: s['display_informations'] as { physical_mode?: string } | undefined,
-      geojson: s['geojson'] as { length?: number } | undefined,
+      length: s['length'] as number | undefined,
     }
+  }
+
+  private getStopCoord(point: Record<string, unknown> | undefined): [number, number] | null {
+    const sp = (
+      (point?.['stop_point'] ?? point?.['address']) as Record<string, unknown> | undefined
+    )
+    const coord = sp?.['coord'] as { lat?: string; lon?: string } | undefined
+    if (!coord?.lat || !coord?.lon) return null
+    return [parseFloat(coord.lon), parseFloat(coord.lat)]
   }
 
   private pickFastest(journeys: RouteResult[]): RouteResult | null {
@@ -96,6 +105,13 @@ export class RoutesService {
         const from = s['from'] as Record<string, unknown> | undefined
         const to = s['to'] as Record<string, unknown> | undefined
         const geojson = s['geojson'] as Record<string, unknown> | undefined
+
+        const rawCoords = (geojson?.['coordinates'] as number[][] | undefined) ?? []
+        const fromCoord = this.getStopCoord(from)
+        const toCoord = this.getStopCoord(to)
+        const estimated = rawCoords.length < 2
+        const coordinates = estimated && fromCoord && toCoord ? [fromCoord, toCoord] : rawCoords
+
         return {
           type: s['type'] as string,
           mode: (info?.['commercial_mode'] as string) ?? (s['type'] as string),
@@ -107,7 +123,8 @@ export class RoutesService {
           to:
             (((to?.['stop_point'] as Record<string, unknown> | undefined)?.['name']) as string | undefined) ??
             (((to?.['address'] as Record<string, unknown> | undefined)?.['name']) as string | undefined),
-          coordinates: (geojson?.['coordinates'] as number[][] | undefined) ?? [],
+          coordinates,
+          estimated,
         }
       })
   }

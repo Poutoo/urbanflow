@@ -106,6 +106,16 @@ function ItinerairesContent() {
   const mapSections = selectedRoute?.sections ?? []
   const mapStations = results?.nearbyBikeStations ?? []
 
+  const startLabel = selectedRoute
+    ? `Démarrer l'itinéraire ${
+        results?.ecological?.id === selectedRoute.id
+          ? 'écologique'
+          : results?.fast?.id === selectedRoute.id
+            ? 'rapide'
+            : 'économique'
+      }`
+    : 'Sélectionner un itinéraire'
+
   return (
     <div className="flex h-[calc(100vh-64px)] flex-col">
       {/* Header */}
@@ -130,8 +140,8 @@ function ItinerairesContent() {
         )}
       </div>
 
-      {/* Map — 40% */}
-      <div className="h-[40%] shrink-0">
+      {/* Map — 35% */}
+      <div className="h-[35%] shrink-0">
         <MapView
           userLat={fromLat}
           userLng={fromLng}
@@ -140,8 +150,8 @@ function ItinerairesContent() {
         />
       </div>
 
-      {/* Results panel — 60% */}
-      <div className="h-[60%] overflow-hidden bg-[#F7F9FC]">
+      {/* Results panel — flexible */}
+      <div className="flex flex-1 flex-col overflow-hidden bg-[#F7F9FC]">
         {loading && (
           <div className="flex h-full flex-col items-center justify-center gap-3">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1A5F7A] border-t-transparent" />
@@ -151,9 +161,7 @@ function ItinerairesContent() {
 
         {!loading && error && (
           <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-            <span className="text-4xl" aria-hidden="true">
-              🗺️
-            </span>
+            <span className="text-4xl" aria-hidden="true">🗺️</span>
             <p className="text-sm font-medium text-[#0F1B2D]">{error}</p>
             <a
               href="/carte"
@@ -166,9 +174,7 @@ function ItinerairesContent() {
 
         {!loading && !error && !toAddress && (
           <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-            <span className="text-4xl" aria-hidden="true">
-              🔍
-            </span>
+            <span className="text-4xl" aria-hidden="true">🔍</span>
             <p className="text-sm text-[#6B7280]">
               Entrez une destination depuis la carte pour lancer la recherche.
             </p>
@@ -182,11 +188,30 @@ function ItinerairesContent() {
         )}
 
         {!loading && !error && results && (
-          <RouteResultsPanel
-            results={results}
-            selectedId={selectedRoute?.id ?? null}
-            onSelect={setSelectedRoute}
-          />
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto">
+              <RouteResultsPanel
+                results={results}
+                selectedId={selectedRoute?.id ?? null}
+                onSelect={setSelectedRoute}
+              />
+            </div>
+
+            {/* Bouton Démarrer fixé en bas */}
+            <div className="shrink-0 border-t border-[#E5E7EB] bg-white px-4 py-3">
+              <button
+                disabled={!selectedRoute}
+                className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-white transition-opacity disabled:opacity-40"
+                style={{ backgroundColor: '#1A5F7A' }}
+                onClick={() => {/* navigation à implémenter */}}
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                {startLabel}
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

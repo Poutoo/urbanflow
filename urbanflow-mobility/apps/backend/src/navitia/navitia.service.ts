@@ -26,7 +26,7 @@ export class NavitiaService {
     const url = `${this.baseUrl}/journeys`
     const response = await firstValueFrom(
       this.http
-        .get(url, {
+        .get<{ journeys: unknown[] }>(url, {
           params: {
             from: `${from.lng};${from.lat}`,
             to: `${to.lng};${to.lat}`,
@@ -48,6 +48,6 @@ export class NavitiaService {
           }),
         ),
     )
-    return (response.data.journeys as unknown[]) ?? []
+    return response.data.journeys ?? []
   }
 }

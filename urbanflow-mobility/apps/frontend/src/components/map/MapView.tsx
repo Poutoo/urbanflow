@@ -19,6 +19,7 @@ interface Section {
   line?: string
   duration: number
   coordinates: number[][]
+  estimated?: boolean
 }
 
 interface Station {
@@ -40,7 +41,8 @@ interface Props {
 const PARIS_CENTER: [number, number] = [48.8566, 2.3522]
 
 export function MapView({ userLat, userLng, sections = [], stations = [] }: Props) {
-  const center: [number, number] = [userLat, userLng]
+  const center: [number, number] =
+    isNaN(userLat) || isNaN(userLng) ? PARIS_CENTER : [userLat, userLng]
 
   return (
     <MapContainer
@@ -51,8 +53,9 @@ export function MapView({ userLat, userLng, sections = [], stations = [] }: Prop
       attributionControl={true}
     >
       <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        maxZoom={20}
       />
       <UserMarker lat={userLat} lng={userLng} />
       {sections.length > 0 && <RouteLayer sections={sections} />}

@@ -33,4 +33,5 @@ export interface RouteSection {
   from?: string
   to?: string
   coordinates: number[][]
+  estimated?: boolean // true = ligne droite de fallback, pas de géométrie réelle
 }

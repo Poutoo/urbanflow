@@ -24,7 +24,7 @@ interface Props {
   onSelect: (route: RouteResult) => void
 }
 
-const ORDER: Strategy[] = ['ecological', 'fast', 'economic']
+const ORDER: Strategy[] = ['fast', 'ecological', 'economic']
 
 export function RouteResultsPanel({ results, selectedId, onSelect }: Props) {
   const [pmrOnly, setPmrOnly] = useState(false)

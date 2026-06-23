@@ -7,6 +7,7 @@ export interface RouteSection {
   line?: string
   duration: number
   coordinates: number[][]
+  estimated?: boolean
 }
 
 export interface RouteResult {
@@ -44,6 +45,12 @@ function formatDuration(seconds: number): string {
   return h > 0 ? `${h}h ${m}min` : `${m} min`
 }
 
+// "20260623T101233" → "10:12"
+function formatTime(navitia: string): string {
+  if (!navitia || navitia.length < 13) return ''
+  return `${navitia.slice(9, 11)}:${navitia.slice(11, 13)}`
+}
+
 interface Props {
   strategy: Strategy
   route: RouteResult
@@ -57,69 +64,72 @@ export function RouteCard({ strategy, route, isSelected, onSelect }: Props) {
 
   return (
     <div
-      className="rounded-2xl border-2 p-4 transition-shadow"
+      className="overflow-hidden rounded-2xl border-2 transition-shadow"
       style={{
         borderColor: isSelected ? style.color : style.border,
         backgroundColor: isSelected ? style.bg : '#FFFFFF',
-        boxShadow: isSelected ? `0 4px 12px ${style.color}33` : undefined,
+        boxShadow: isSelected ? `0 4px 16px ${style.color}33` : undefined,
       }}
+      onClick={onSelect}
     >
-      {/* Header */}
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-lg" aria-hidden="true">
-            {style.icon}
-          </span>
-          <span className="text-sm font-bold" style={{ color: style.color }}>
-            {style.label}
-          </span>
-          {style.recommended && (
+      {/* Bandeau recommandé */}
+      {style.recommended && (
+        <div
+          className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-white"
+          style={{ backgroundColor: style.color }}
+        >
+          Recommandé · Le plus vert
+        </div>
+      )}
+
+      <div className="p-4">
+        {/* Header : badge + durée + heure d'arrivée */}
+        <div className="mb-2.5 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
             <span
-              className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold text-white"
               style={{ backgroundColor: style.color }}
             >
-              LE PLUS VERT
+              <span aria-hidden="true">{style.icon}</span>
+              {style.label}
             </span>
-          )}
-          {route.isPmrAccessible && (
-            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-              ♿ PMR
+            {route.isPmrAccessible && (
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                ♿ PMR
+              </span>
+            )}
+          </div>
+          <div className="text-right">
+            <p className="text-base font-bold text-[#0F1B2D]">{formatDuration(route.duration)}</p>
+            {route.arrivalTime && (
+              <p className="text-xs text-[#6B7280]">arrivée {formatTime(route.arrivalTime)}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Section pills */}
+        <div className="mb-2.5 flex flex-wrap gap-1.5">
+          {visibleSections.map((s, i) => (
+            <SectionPill key={i} type={s.type} mode={s.mode} line={s.line} duration={s.duration} />
+          ))}
+        </div>
+
+        {/* CO2 */}
+        <div className="flex flex-wrap items-center gap-3 text-xs text-[#6B7280]">
+          <span>🌍 {(route.co2Kg * 1000).toFixed(0)} g CO₂</span>
+          {route.co2SavedKg > 0 && (
+            <span className="font-semibold text-[#2D7D46]">
+              −{(route.co2SavedKg * 1000).toFixed(0)} g vs voiture
             </span>
           )}
         </div>
-        <span className="shrink-0 text-base font-bold text-[#0F1B2D]">{formatDuration(route.duration)}</span>
-      </div>
 
-      {/* Section pills */}
-      <div className="mb-3 flex flex-wrap gap-1.5">
-        {visibleSections.map((s, i) => (
-          <SectionPill key={i} type={s.type} mode={s.mode} line={s.line} duration={s.duration} />
-        ))}
-      </div>
-
-      {/* CO2 */}
-      <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-[#6B7280]">
-        <span>🌍 {(route.co2Kg * 1000).toFixed(0)} g CO₂</span>
-        {route.co2SavedKg > 0 && (
-          <span className="font-semibold" style={{ color: '#2D7D46' }}>
-            -{(route.co2SavedKg * 1000).toFixed(0)} g vs voiture
-          </span>
+        {strategy === 'ecological' && (
+          <p className="mt-1 text-[10px] text-[#9CA3AF]">
+            Émissions estimées sur la base des facteurs ADEME Base Carbone
+          </p>
         )}
       </div>
-
-      {strategy === 'ecological' && (
-        <p className="mb-3 text-[10px] text-[#9CA3AF]">
-          Émissions estimées sur la base des facteurs ADEME Base Carbone
-        </p>
-      )}
-
-      <button
-        onClick={onSelect}
-        className="w-full rounded-full py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 active:opacity-75"
-        style={{ backgroundColor: style.color }}
-      >
-        {isSelected ? '✓ Itinéraire sélectionné' : 'Choisir cet itinéraire'}
-      </button>
     </div>
   )
 }

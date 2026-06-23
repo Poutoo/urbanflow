@@ -5,9 +5,7 @@ interface NavitiaSection {
   display_informations?: {
     physical_mode?: string
   }
-  geojson?: {
-    length?: number
-  }
+  length?: number // distance en mètres (champ racine de la section Navitia)
 }
 
 export const ADEME_FACTORS: Record<string, number> = {
@@ -54,7 +52,7 @@ export class Co2Service {
           : section.type
       const mode = normalizeMode(rawMode)
       const factor = ADEME_FACTORS[mode] ?? ADEME_FACTORS['default']
-      const distanceKm = (section.geojson?.length ?? 0) / 1000
+      const distanceKm = (section.length ?? 0) / 1000
       return total + factor * distanceKm
     }, 0)
   }

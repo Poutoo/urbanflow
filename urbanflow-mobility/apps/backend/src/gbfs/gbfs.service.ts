@@ -32,14 +32,15 @@ export class GbfsService {
     if (cached) return cached
 
     try {
+      type GbfsApiResponse = { data: { stations: Record<string, unknown>[] } }
       const [infoRes, statusRes] = await Promise.all([
-        firstValueFrom(this.http.get(this.INFO_URL)),
-        firstValueFrom(this.http.get(this.STATIONS_URL)),
+        firstValueFrom(this.http.get<GbfsApiResponse>(this.INFO_URL)),
+        firstValueFrom(this.http.get<GbfsApiResponse>(this.STATIONS_URL)),
       ])
 
       const stations = this.mergeAndFilterNearby(
-        infoRes.data.data.stations as Record<string, unknown>[],
-        statusRes.data.data.stations as Record<string, unknown>[],
+        infoRes.data.data.stations,
+        statusRes.data.data.stations,
         lat,
         lng,
         radiusMeters,
