@@ -4,7 +4,7 @@ function section(type: string, physicalMode?: string, lengthM = 0) {
   return {
     type,
     display_informations: physicalMode ? { physical_mode: physicalMode } : undefined,
-    geojson: { length: lengthM },
+    length: lengthM,
   }
 }
 
@@ -63,7 +63,7 @@ describe('Co2Service', () => {
       expect(service.calculateJourneyCo2([])).toBe(0)
     })
 
-    it('ignore la distance si geojson absent (length = 0)', () => {
+    it('ignore la distance si length absent', () => {
       const sections = [{ type: 'public_transport', display_informations: { physical_mode: 'Bus' } }]
       expect(service.calculateJourneyCo2(sections)).toBe(0)
     })
