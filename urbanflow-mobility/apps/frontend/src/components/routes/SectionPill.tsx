@@ -1,43 +1,23 @@
 'use client'
+import { Icon } from '@iconify/react'
 
-const MODE_ICONS: Record<string, string> = {
-  walking: '🚶',
-  street_network: '🚶',
-  transfer: '🚶',
-  bicycle: '🚲',
-  bss_rent: '🚲',
-  bss_put: '🚲',
-  bus: '🚌',
-  tram: '🚃',
-  metro: '🚇',
-  rapidtransit: '🚊',
-  default: '🚌',
+interface ModeConfig {
+  icon: string
+  bg: string   // rgba semi-transparent
+  text: string // couleur pleine pour le texte et l'icône
 }
 
-const MODE_BG: Record<string, string> = {
-  walking: '#EDE9FE',
-  street_network: '#EDE9FE',
-  transfer: '#F3F4F6',
-  bicycle: '#DCFCE7',
-  bss_rent: '#DCFCE7',
-  bus: '#DBEAFE',
-  tram: '#FEF3C7',
-  metro: '#E0E7FF',
-  rapidtransit: '#E0E7FF',
-  default: '#F3F4F6',
-}
-
-const MODE_TEXT: Record<string, string> = {
-  walking: '#7C3AED',
-  street_network: '#7C3AED',
-  transfer: '#6B7280',
-  bicycle: '#16A34A',
-  bss_rent: '#16A34A',
-  bus: '#1D4ED8',
-  tram: '#B45309',
-  metro: '#4F46E5',
-  rapidtransit: '#4F46E5',
-  default: '#6B7280',
+const MODE_CONFIG: Record<string, ModeConfig> = {
+  walking:        { icon: 'ph:person-simple-walk', bg: 'rgba(124, 58, 237, 0.12)', text: '#6D28D9' },
+  street_network: { icon: 'ph:person-simple-walk', bg: 'rgba(124, 58, 237, 0.12)', text: '#6D28D9' },
+  transfer:       { icon: 'ph:person-simple-walk', bg: 'rgba(107, 114, 128, 0.12)', text: '#6B7280' },
+  bicycle:        { icon: 'ph:bicycle',            bg: 'rgba(22, 163, 74, 0.12)',   text: '#15803D' },
+  bss_rent:       { icon: 'ph:bicycle',            bg: 'rgba(22, 163, 74, 0.12)',   text: '#15803D' },
+  bus:            { icon: 'ph:bus',                bg: 'rgba(37, 99, 235, 0.12)',   text: '#1D4ED8' },
+  tram:           { icon: 'ph:train-simple',       bg: 'rgba(217, 119, 6, 0.12)',   text: '#B45309' },
+  metro:          { icon: 'ph:train-simple',       bg: 'rgba(79, 70, 229, 0.13)',   text: '#4338CA' },
+  rapidtransit:   { icon: 'ph:train',              bg: 'rgba(220, 38, 38, 0.11)',   text: '#B91C1C' },
+  default:        { icon: 'ph:bus',                bg: 'rgba(107, 114, 128, 0.12)', text: '#6B7280' },
 }
 
 interface Props {
@@ -49,21 +29,19 @@ interface Props {
 
 export function SectionPill({ type, mode, line, duration }: Props) {
   const key = type === 'public_transport' ? mode.toLowerCase() : type
-  const icon = MODE_ICONS[key] ?? MODE_ICONS[mode.toLowerCase()] ?? MODE_ICONS.default
-  const bg = MODE_BG[key] ?? MODE_BG.default
-  const color = MODE_TEXT[key] ?? MODE_TEXT.default
+  const config = MODE_CONFIG[key] ?? MODE_CONFIG[mode.toLowerCase()] ?? MODE_CONFIG.default!
   const mins = Math.round(duration / 60)
 
   if (mins === 0) return null
 
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
-      style={{ backgroundColor: bg, color }}
+      className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
+      style={{ backgroundColor: config.bg, color: config.text }}
     >
-      <span aria-hidden="true">{icon}</span>
-      {line && <span>{line}</span>}
-      <span>{mins} min</span>
+      <Icon icon={config.icon} width={13} aria-hidden="true" />
+      {line && <span className="font-bold">{line}</span>}
+      <span>{mins}&apos;</span>
     </span>
   )
 }
