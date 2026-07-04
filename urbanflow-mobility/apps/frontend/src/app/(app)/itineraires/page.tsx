@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import { useState, useEffect, Suspense } from 'react'
 import { useSession } from 'next-auth/react'
 import { RouteResultsPanel, type SearchResult } from '@/components/routes/RouteResultsPanel'
-import type { RouteResult } from '@/components/routes/RouteCard'
+import type { RouteResult, Strategy } from '@/components/routes/RouteCard'
 
 const MapView = dynamic(() => import('@/components/map/MapView').then((m) => m.MapView), {
   ssr: false,
@@ -42,6 +42,7 @@ function ItinerairesContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedRoute, setSelectedRoute] = useState<RouteResult | null>(null)
+  const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null)
 
   useEffect(() => {
     if (!toAddress) return
@@ -53,6 +54,7 @@ function ItinerairesContent() {
       setError(null)
       setResults(null)
       setSelectedRoute(null)
+      setSelectedStrategy(null)
 
       // Si les coordonnées de destination sont déjà dans l'URL (autocomplétion), on les utilise directement
       let dest: { lat: number; lng: number } | null =
@@ -98,7 +100,10 @@ function ItinerairesContent() {
         const data = (await res.json()) as SearchResult
         if (cancelled) return
         setResults(data)
-        setSelectedRoute(data.ecological ?? data.fast ?? data.economic)
+        // Sélection par défaut : écologique, puis rapide, puis économique
+        const defaultStrategy: Strategy = data.ecological ? 'ecological' : data.fast ? 'fast' : 'economic'
+        setSelectedStrategy(defaultStrategy)
+        setSelectedRoute(data[defaultStrategy])
       } catch {
         if (!cancelled) setError('Impossible de joindre le serveur. Vérifiez votre connexion.')
       } finally {
@@ -115,14 +120,13 @@ function ItinerairesContent() {
   const mapSections = selectedRoute?.sections ?? []
   const mapStations = results?.nearbyBikeStations ?? []
 
-  const startLabel = selectedRoute
-    ? `Démarrer l'itinéraire ${
-        results?.ecological?.id === selectedRoute.id
-          ? 'écologique'
-          : results?.fast?.id === selectedRoute.id
-            ? 'rapide'
-            : 'économique'
-      }`
+  const STRATEGY_LABEL: Record<Strategy, string> = {
+    fast: 'rapide',
+    ecological: 'écologique',
+    economic: 'économique',
+  }
+  const startLabel = selectedStrategy
+    ? `Démarrer l'itinéraire ${STRATEGY_LABEL[selectedStrategy]}`
     : 'Sélectionner un itinéraire'
 
   return (
@@ -201,8 +205,11 @@ function ItinerairesContent() {
             <div className="flex-1 overflow-y-auto">
               <RouteResultsPanel
                 results={results}
-                selectedId={selectedRoute?.id ?? null}
-                onSelect={setSelectedRoute}
+                selectedStrategy={selectedStrategy}
+                onSelect={(route, strategy) => {
+                  setSelectedRoute(route)
+                  setSelectedStrategy(strategy)
+                }}
               />
             </div>
 

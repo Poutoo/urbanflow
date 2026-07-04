@@ -20,13 +20,13 @@ export interface SearchResult {
 
 interface Props {
   results: SearchResult
-  selectedId: string | null
-  onSelect: (route: RouteResult) => void
+  selectedStrategy: Strategy | null
+  onSelect: (route: RouteResult, strategy: Strategy) => void
 }
 
 const ORDER: Strategy[] = ['fast', 'ecological', 'economic']
 
-export function RouteResultsPanel({ results, selectedId, onSelect }: Props) {
+export function RouteResultsPanel({ results, selectedStrategy, onSelect }: Props) {
   const [pmrOnly, setPmrOnly] = useState(false)
 
   const strategies = ORDER.map((key) => ({ key, route: results[key] })).filter(
@@ -72,8 +72,8 @@ export function RouteResultsPanel({ results, selectedId, onSelect }: Props) {
                   key={key}
                   strategy={key}
                   route={route}
-                  isSelected={selectedId === route.id}
-                  onSelect={() => onSelect(route)}
+                  isSelected={selectedStrategy === key}
+                  onSelect={() => onSelect(route, key)}
                 />
               ) : null,
             )}
