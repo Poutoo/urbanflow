@@ -1,5 +1,22 @@
 import { Injectable } from '@nestjs/common'
 import { NavitiaService } from '../navitia/navitia.service'
+
+function haversineDistance(coords: number[][]): number {
+  let total = 0
+  for (let i = 1; i < coords.length; i++) {
+    const [lon1, lat1] = coords[i - 1]!
+    const [lon2, lat2] = coords[i]!
+    const R = 6_371_000
+    const φ1 = (lat1! * Math.PI) / 180
+    const φ2 = (lat2! * Math.PI) / 180
+    const Δφ = ((lat2! - lat1!) * Math.PI) / 180
+    const Δλ = ((lon2! - lon1!) * Math.PI) / 180
+    const a =
+      Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2
+    total += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  }
+  return total
+}
 import { GbfsService } from '../gbfs/gbfs.service'
 import { Co2Service } from '../co2/co2.service'
 import { CacheService } from '../cache/cache.service'
@@ -36,7 +53,7 @@ export class RoutesService {
     const enriched = (journeys as Record<string, unknown>[]).map((journey) => {
       const sections = journey['sections'] as Record<string, unknown>[]
       const distanceKm = ((journey['distances'] as Record<string, number> | undefined)?.['total'] ?? 0) / 1000
-      const co2Kg = this.co2.calculateJourneyCo2(sections.map(this.toNavitiaSection))
+      const co2Kg = this.co2.calculateJourneyCo2(sections.map((s) => this.toNavitiaSection(s)))
       return {
         id: crypto.randomUUID(),
         duration: journey['duration'] as number,
@@ -61,10 +78,20 @@ export class RoutesService {
   }
 
   private toNavitiaSection(s: Record<string, unknown>) {
+    const geojson = s['geojson'] as Record<string, unknown> | undefined
+    const coords = (geojson?.['coordinates'] as number[][] | undefined) ?? []
+
+    // Navitia fournit `length` pour street_network mais pas pour public_transport.
+    // Fallback : distance Haversine sur les coordonnées GeoJSON.
+    let length = s['length'] as number | undefined
+    if ((!length || length === 0) && coords.length >= 2) {
+      length = haversineDistance(coords)
+    }
+
     return {
       type: s['type'] as string,
       display_informations: s['display_informations'] as { physical_mode?: string } | undefined,
-      length: s['length'] as number | undefined,
+      length,
     }
   }
 
