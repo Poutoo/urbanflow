@@ -34,6 +34,9 @@ function ItinerairesContent() {
   const toAddress = params.get('toAddress') ?? ''
   const fromLat = parseFloat(params.get('fromLat') ?? String(PARIS.lat))
   const fromLng = parseFloat(params.get('fromLng') ?? String(PARIS.lng))
+  // Coordonnées pré-résolues par l'autocomplétion (évite le géocodage Nominatim)
+  const preToLat = parseFloat(params.get('toLat') ?? '')
+  const preToLng = parseFloat(params.get('toLng') ?? '')
 
   const [results, setResults] = useState<SearchResult | null>(null)
   const [loading, setLoading] = useState(false)
@@ -51,14 +54,20 @@ function ItinerairesContent() {
       setResults(null)
       setSelectedRoute(null)
 
-      const dest = await geocodeAddress(toAddress)
-      if (cancelled) return
+      // Si les coordonnées de destination sont déjà dans l'URL (autocomplétion), on les utilise directement
+      let dest: { lat: number; lng: number } | null =
+        !isNaN(preToLat) && !isNaN(preToLng) ? { lat: preToLat, lng: preToLng } : null
+
       if (!dest) {
-        setError(
-          `Adresse introuvable. Essayez un format précis, par exemple : "Tour Eiffel, Paris" ou "15 rue de Rivoli, Paris".`,
-        )
-        setLoading(false)
-        return
+        dest = await geocodeAddress(toAddress)
+        if (cancelled) return
+        if (!dest) {
+          setError(
+            `Adresse introuvable. Essayez un format précis, par exemple : "Tour Eiffel, Paris" ou "15 rue de Rivoli, Paris".`,
+          )
+          setLoading(false)
+          return
+        }
       }
 
       try {
@@ -101,7 +110,7 @@ function ItinerairesContent() {
     return () => {
       cancelled = true
     }
-  }, [toAddress, fromLat, fromLng, session])
+  }, [toAddress, fromLat, fromLng, preToLat, preToLng, session])
 
   const mapSections = selectedRoute?.sections ?? []
   const mapStations = results?.nearbyBikeStations ?? []

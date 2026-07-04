@@ -1,8 +1,9 @@
 'use client'
 import dynamic from 'next/dynamic'
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGeolocation } from '@/hooks/useGeolocation'
+import { usePlaceSuggestions, type PlaceSuggestion } from '@/hooks/usePlaceSuggestions'
 
 const MapView = dynamic(
   () => import('@/components/map/MapView').then((m) => m.MapView),
@@ -12,11 +13,26 @@ const MapView = dynamic(
 const PARIS_CENTER = { lat: 48.8566, lng: 2.3522 }
 const CONSENT_KEY = 'geo_consent'
 
+const TYPE_ICON: Record<string, string> = {
+  stop_area: '🚉',
+  address: '📍',
+  poi: '📌',
+}
+
 export default function CartePage() {
   const router = useRouter()
   const [consentGiven, setConsentGiven] = useState<boolean | null>(null)
   const [showModal, setShowModal] = useState(false)
-  const [destination, setDestination] = useState('')
+  const [query, setQuery] = useState('')
+  const [selectedPlace, setSelectedPlace] = useState<PlaceSuggestion | null>(null)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const geo = useGeolocation(consentGiven === true)
+  const { suggestions, loading, clear } = usePlaceSuggestions(
+    selectedPlace ? '' : query, // stoppe les requêtes une fois un lieu sélectionné
+  )
 
   useEffect(() => {
     const stored = localStorage.getItem(CONSENT_KEY)
@@ -27,7 +43,25 @@ export default function CartePage() {
     }
   }, [])
 
-  const geo = useGeolocation(consentGiven === true)
+  // Ferme le dropdown si clic en dehors
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
+
+  useEffect(() => {
+    setShowDropdown(suggestions.length > 0)
+  }, [suggestions])
 
   function handleAllow() {
     localStorage.setItem(CONSENT_KEY, 'true')
@@ -40,18 +74,59 @@ export default function CartePage() {
     setShowModal(false)
   }
 
-  function handleSearch(e: FormEvent) {
-    e.preventDefault()
-    const trimmed = destination.trim()
-    if (!trimmed) return
+  function handleInputChange(value: string) {
+    setQuery(value)
+    setSelectedPlace(null) // reset si l'utilisateur retape
+  }
+
+  function handleSelect(place: PlaceSuggestion) {
+    setQuery(place.name)
+    setSelectedPlace(place)
+    setShowDropdown(false)
+    clear()
+    navigate(place)
+  }
+
+  function navigate(place: PlaceSuggestion) {
     const fromLat = geo.lat ?? PARIS_CENTER.lat
     const fromLng = geo.lng ?? PARIS_CENTER.lng
     const params = new URLSearchParams({
-      toAddress: trimmed,
+      toAddress: place.name,
       fromLat: String(fromLat),
       fromLng: String(fromLng),
+      toLat: String(place.lat),
+      toLng: String(place.lng),
     })
     router.push(`/itineraires?${params.toString()}`)
+  }
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault()
+    const trimmed = query.trim()
+    if (!trimmed) return
+
+    // Si un lieu a déjà été sélectionné, naviguer directement
+    if (selectedPlace) {
+      navigate(selectedPlace)
+      return
+    }
+
+    // Sinon utiliser la première suggestion disponible
+    if (suggestions.length > 0) {
+      handleSelect(suggestions[0]!)
+      return
+    }
+
+    // Fallback : naviguer sans coordonnées (géocodage côté itinéraires)
+    const fromLat = geo.lat ?? PARIS_CENTER.lat
+    const fromLng = geo.lng ?? PARIS_CENTER.lng
+    router.push(
+      `/itineraires?${new URLSearchParams({
+        toAddress: trimmed,
+        fromLat: String(fromLat),
+        fromLng: String(fromLng),
+      }).toString()}`,
+    )
   }
 
   const mapLat = geo.lat ?? PARIS_CENTER.lat
@@ -62,22 +137,43 @@ export default function CartePage() {
       {/* Carte full-screen */}
       <MapView userLat={mapLat} userLng={mapLng} />
 
-      {/* Barre de recherche overlay */}
+      {/* Barre de recherche + dropdown */}
       <div className="absolute left-1/2 top-4 z-[1000] w-[90%] max-w-md -translate-x-1/2">
         <form onSubmit={handleSearch}>
           <div className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-lg">
-            <svg className="h-5 w-5 shrink-0 text-[#6B7280]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            {loading ? (
+              <div className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-[#1A5F7A] border-t-transparent" />
+            ) : (
+              <svg className="h-5 w-5 shrink-0 text-[#6B7280]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            )}
             <input
+              ref={inputRef}
               type="text"
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
+              value={query}
+              onChange={(e) => handleInputChange(e.target.value)}
+              onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
               placeholder="Où voulez-vous aller ?"
               className="w-full bg-transparent text-sm text-[#0F1B2D] placeholder-[#6B7280] outline-none"
               aria-label="Destination"
+              aria-autocomplete="list"
+              aria-expanded={showDropdown}
+              autoComplete="off"
             />
-            {destination && (
+            {query && (
+              <button
+                type="button"
+                onClick={() => { setQuery(''); setSelectedPlace(null); clear(); setShowDropdown(false) }}
+                className="shrink-0 text-[#6B7280] hover:text-[#0F1B2D]"
+                aria-label="Effacer"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+            {query && (
               <button
                 type="submit"
                 className="shrink-0 rounded-full bg-[#1A5F7A] px-3 py-1 text-xs font-semibold text-white"
@@ -88,6 +184,30 @@ export default function CartePage() {
             )}
           </div>
         </form>
+
+        {/* Dropdown suggestions */}
+        {showDropdown && (
+          <div
+            ref={dropdownRef}
+            role="listbox"
+            className="mt-1.5 overflow-hidden rounded-2xl bg-white shadow-lg"
+          >
+            {suggestions.map((place, i) => (
+              <button
+                key={i}
+                role="option"
+                type="button"
+                onClick={() => handleSelect(place)}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-[#F7F9FC] focus:bg-[#F7F9FC] focus:outline-none"
+              >
+                <span className="text-base" aria-hidden="true">
+                  {TYPE_ICON[place.type] ?? '📍'}
+                </span>
+                <span className="text-sm text-[#0F1B2D]">{place.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Indicateur d'erreur géolocalisation */}
