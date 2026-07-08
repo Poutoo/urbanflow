@@ -1,10 +1,10 @@
 'use client'
 import dynamic from 'next/dynamic'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, Suspense } from 'react'
 import { useSession } from 'next-auth/react'
 import { RouteResultsPanel, type SearchResult } from '@/components/routes/RouteResultsPanel'
-import type { RouteResult, Strategy } from '@/components/routes/RouteCard'
+import type { RouteResult, RouteSection, Strategy } from '@/components/routes/RouteCard'
 
 const MapView = dynamic(() => import('@/components/map/MapView').then((m) => m.MapView), {
   ssr: false,
@@ -27,8 +27,31 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
   }
 }
 
+// Normalise une section vers une clé de mode pour le dashboard CO₂
+function sectionModeKey(section: RouteSection): string {
+  if (section.type === 'public_transport') {
+    const mode = section.mode.toLowerCase()
+    if (mode.includes('métro') || mode.includes('metro')) return 'metro'
+    if (mode.includes('tram')) return 'tram'
+    if (mode.includes('bus')) return 'bus'
+    if (mode.includes('rer') || mode.includes('train')) return 'rapidtransit'
+    return 'bus'
+  }
+  if (section.type === 'bss_rent' || section.mode === 'bike') return 'velo'
+  return 'walking'
+}
+
+// Mode dominant du trajet = mode de la section la plus longue en durée
+function getPrimaryMode(sections: RouteSection[]): string {
+  const longest = [...sections]
+    .filter((s) => s.type !== 'waiting')
+    .sort((a, b) => b.duration - a.duration)[0]
+  return longest ? sectionModeKey(longest) : 'walking'
+}
+
 function ItinerairesContent() {
   const params = useSearchParams()
+  const router = useRouter()
   const { data: session } = useSession()
 
   const toAddress = params.get('toAddress') ?? ''
@@ -43,6 +66,37 @@ function ItinerairesContent() {
   const [error, setError] = useState<string | null>(null)
   const [selectedRoute, setSelectedRoute] = useState<RouteResult | null>(null)
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null)
+  const [starting, setStarting] = useState(false)
+
+  // Valide l'itinéraire : enregistre le CO₂ économisé puis redirige vers le dashboard
+  async function handleStartJourney() {
+    if (!selectedRoute || !selectedStrategy) return
+    setStarting(true)
+
+    try {
+      const token = (session as { accessToken?: string } | null)?.accessToken
+      await fetch(`${API_URL}/co2/record`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          co2SavedKg: selectedRoute.co2SavedKg,
+          co2EmittedKg: selectedRoute.co2Kg,
+          distanceKm: selectedRoute.distanceKm,
+          primaryMode: getPrimaryMode(selectedRoute.sections),
+          strategy: selectedStrategy,
+          durationMin: Math.round(selectedRoute.duration / 60),
+        }),
+      })
+    } catch (err) {
+      // Non bloquant — l'utilisateur continue même si l'enregistrement échoue
+      console.warn('CO₂ record failed:', err)
+    }
+
+    router.push('/empreinte')
+  }
 
   useEffect(() => {
     if (!toAddress) return
@@ -216,10 +270,10 @@ function ItinerairesContent() {
             {/* Bouton Démarrer fixé en bas */}
             <div className="shrink-0 border-t border-[#E5E7EB] bg-white px-4 py-3">
               <button
-                disabled={!selectedRoute}
+                disabled={!selectedRoute || starting}
                 className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-white transition-opacity disabled:opacity-40"
                 style={{ backgroundColor: '#1A5F7A' }}
-                onClick={() => {/* navigation à implémenter */}}
+                onClick={() => void handleStartJourney()}
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />

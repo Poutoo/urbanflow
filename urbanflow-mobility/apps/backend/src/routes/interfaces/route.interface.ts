@@ -19,6 +19,7 @@ export interface RouteResult {
   duration: number
   departureTime: string
   arrivalTime: string
+  distanceKm: number
   co2Kg: number
   co2SavedKg: number
   isPmrAccessible: boolean

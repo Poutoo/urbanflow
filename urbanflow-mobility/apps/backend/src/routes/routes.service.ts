@@ -52,13 +52,19 @@ export class RoutesService {
 
     const enriched = (journeys as Record<string, unknown>[]).map((journey) => {
       const sections = journey['sections'] as Record<string, unknown>[]
-      const distanceKm = ((journey['distances'] as Record<string, number> | undefined)?.['total'] ?? 0) / 1000
-      const co2Kg = this.co2.calculateJourneyCo2(sections.map((s) => this.toNavitiaSection(s)))
+      const navSections = sections.map((s) => this.toNavitiaSection(s))
+      // Navitia n'inclut pas toujours distances.total → fallback : somme des longueurs de sections
+      let distanceKm = ((journey['distances'] as Record<string, number> | undefined)?.['total'] ?? 0) / 1000
+      if (distanceKm === 0) {
+        distanceKm = navSections.reduce((sum, s) => sum + (s.length ?? 0), 0) / 1000
+      }
+      const co2Kg = this.co2.calculateJourneyCo2(navSections)
       return {
         id: crypto.randomUUID(),
         duration: journey['duration'] as number,
         departureTime: journey['departure_date_time'] as string,
         arrivalTime: journey['arrival_date_time'] as string,
+        distanceKm,
         co2Kg,
         co2SavedKg: this.co2.calculateCo2Saved(co2Kg, distanceKm),
         sections: this.formatSections(sections),
