@@ -31,6 +31,20 @@ export interface RefreshPayload {
   refreshToken: string;
 }
 
+/** Résumé du profil retourné par GET /auth/me (badge + progression CO₂ incluse) */
+export interface AuthMeProfile {
+  preferredModes: TransportMode[];
+  priorityMode: PriorityMode;
+  pmrEnabled: boolean;
+  co2Goal: number;
+  totalCo2SavedKg: number;
+  ecoMobileBadge: boolean;
+}
+
+export interface AuthMeResponse extends AuthUser {
+  profile: AuthMeProfile;
+}
+
 // ─── JWT ────────────────────────────────────────────────────────────────────
 
 export interface JwtPayload {
