@@ -17,10 +17,11 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts Account[]
-  sessions Session[]
-  profile  UserProfile?
-  routes   SavedRoute[]
+  accounts   Account[]
+  sessions   Session[]
+  profile    UserProfile?
+  routes     SavedRoute[]
+  co2Records Co2Record[]
 
   @@map("users")
 }
@@ -67,6 +68,8 @@ model UserProfile {
   workAddress     String?
   workCoordinates Json?
   co2Goal         Float    @default(40.0)
+  ecoMobileBadge  Boolean  @default(false)
+  totalCo2SavedKg Float    @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -86,4 +89,22 @@ model SavedRoute {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("saved_routes")
+}
+
+model Co2Record {
+  id           String   @id @default(cuid())
+  userId       String
+  date         DateTime @default(now())
+  co2SavedKg   Float // CO₂ économisé vs voiture
+  co2EmittedKg Float // CO₂ réellement émis par le trajet
+  distanceKm   Float
+  primaryMode  String // mode dominant : "metro", "bus", "velo", etc.
+  strategy     String // "fast" | "ecological" | "economic"
+  durationMin  Int
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date]) // index pour les requêtes de dashboard
+  @@map("co2_records")
 }
