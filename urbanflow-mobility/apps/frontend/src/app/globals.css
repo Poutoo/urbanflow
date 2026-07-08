@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import 'leaflet/dist/leaflet.css';
 
 @tailwind base;
 @tailwind components;
@@ -64,4 +65,11 @@ a {
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+/* Leaflet — masquer zoom +/- sur mobile (pinch-to-zoom natif) */
+@media (max-width: 767px) {
+  .leaflet-control-zoom {
+    display: none;
+  }
 }
