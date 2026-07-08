@@ -117,10 +117,14 @@ export class RoutesService {
   }
 
   private checkPmrAccessibility(sections: Record<string, unknown>[]): boolean {
-    return sections.every((s) => {
-      if (s['type'] !== 'public_transport') return true
+    const publicTransport = sections.filter((s) => s['type'] === 'public_transport')
+    // Trajet sans transport en commun (ex: marche seule) → toujours accessible
+    if (publicTransport.length === 0) return true
+    // Navitia signale l'accessibilité via display_informations.equipments: ["has_wheelchair_boarding"]
+    return publicTransport.every((s) => {
       const info = s['display_informations'] as Record<string, unknown> | undefined
-      return info?.['wheelchair_boarding'] !== false
+      const equipments = (info?.['equipments'] as string[] | undefined) ?? []
+      return equipments.includes('has_wheelchair_boarding')
     })
   }
 
