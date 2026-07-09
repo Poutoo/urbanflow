@@ -110,6 +110,17 @@ export interface SavedRoute {
   createdAt: string;
 }
 
+// ─── GBFS (vélos en libre-service) ────────────────────────────────────────────
+
+export interface GbfsStation {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  bikesAvailable: number;
+  docksAvailable: number;
+}
+
 // ─── CO₂ Dashboard ──────────────────────────────────────────────────────────
 
 export interface WeeklyDay {
