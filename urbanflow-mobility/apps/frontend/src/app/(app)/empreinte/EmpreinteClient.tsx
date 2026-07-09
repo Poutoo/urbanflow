@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { Icon } from '@iconify/react'
 import type { Co2Summary } from '@urbanflow/types'
 import { useApiSwr } from '@/hooks/useApiSwr'
@@ -6,11 +7,21 @@ import { WeeklyChart } from './components/WeeklyChart'
 import { MonthlyGoal } from './components/MonthlyGoal'
 import { ModeBreakdown } from './components/ModeBreakdown'
 
-function formatWeekLabel(days: Co2Summary['weekly']['days']): string {
-  const first = days[0]
-  if (!first) return ''
-  const date = new Date(`${first.date}T00:00:00`)
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+// Libellé de la semaine en cours, du lundi au dimanche (ex : "du 25 au 31 mai")
+function getCurrentWeekLabel(): string {
+  const now = new Date()
+  const day = now.getDay() // 0 = dimanche, 1 = lundi, …
+  const monday = new Date(now)
+  monday.setDate(now.getDate() + (day === 0 ? -6 : 1 - day))
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+
+  const dayNum = (d: Date) => d.getDate()
+  const monthName = (d: Date) => d.toLocaleDateString('fr-FR', { month: 'long' })
+
+  return monday.getMonth() === sunday.getMonth()
+    ? `du ${dayNum(monday)} au ${dayNum(sunday)} ${monthName(sunday)}`
+    : `du ${dayNum(monday)} ${monthName(monday)} au ${dayNum(sunday)} ${monthName(sunday)}`
 }
 
 function LoadingSkeleton() {
@@ -26,6 +37,23 @@ function LoadingSkeleton() {
 
 export function EmpreinteClient() {
   const { data, isLoading, error, sessionStatus } = useApiSwr<Co2Summary>('/co2/summary')
+  const [shareFeedback, setShareFeedback] = useState<'copied' | null>(null)
+
+  // Partage du score via l'API Web Share (mobile), repli sur le presse-papiers
+  async function handleShare(totalWeekKg: number) {
+    const text = `J'ai évité ${totalWeekKg.toFixed(1)} kg de CO₂ cette semaine avec UrbanFlow 🌿`
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({ title: 'Mon empreinte CO₂ — UrbanFlow', text })
+      } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(text)
+        setShareFeedback('copied')
+        setTimeout(() => setShareFeedback(null), 2000)
+      }
+    } catch {
+      // Annulation utilisateur ou API indisponible — non bloquant
+    }
+  }
 
   if (isLoading || sessionStatus === 'loading' || (sessionStatus === 'authenticated' && !data && !error)) {
     return <LoadingSkeleton />
@@ -58,15 +86,26 @@ export function EmpreinteClient() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-[#0F1B2D]">Mon empreinte</h1>
-          <p className="text-sm text-[#6B7280]">Semaine du {formatWeekLabel(data.weekly.days)}</p>
+          <p className="text-sm text-[#6B7280]">Semaine {getCurrentWeekLabel()}</p>
         </div>
-        <span
-          className="inline-flex items-center gap-1.5 rounded-full bg-[#D4EFE1] px-3 py-1.5 text-sm font-bold text-[#1A5C33]"
-          aria-label={`${data.weekly.totalWeekKg.toFixed(1)} kilogrammes de CO₂ évités cette semaine`}
-        >
-          <Icon icon="ph:leaf" width={15} aria-hidden="true" />
-          −{data.weekly.totalWeekKg.toFixed(1)} kg
-        </span>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => void handleShare(data.weekly.totalWeekKg)}
+            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#1A5F7A] shadow-sm transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A5F7A]"
+            aria-label="Partager mon empreinte CO₂"
+          >
+            <Icon icon="ph:share-network" width={20} aria-hidden="true" />
+          </button>
+          {shareFeedback === 'copied' && (
+            <span
+              role="status"
+              className="absolute right-0 top-full mt-1 whitespace-nowrap rounded-lg bg-[#0F1B2D] px-2.5 py-1 text-xs font-medium text-white shadow-lg"
+            >
+              Copié !
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Graphique hebdomadaire */}

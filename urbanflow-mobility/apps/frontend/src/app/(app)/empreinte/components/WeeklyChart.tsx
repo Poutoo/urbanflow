@@ -31,7 +31,7 @@ export function WeeklyChart({ days }: Props) {
             </span>
             <div className="flex w-full items-end" style={{ height: '80px' }}>
               <div
-                className={`w-full rounded-t-sm transition-all ${isHighlight ? 'bg-[#2D7D46]' : 'bg-[#D4EFE1]'}`}
+                className={`w-full rounded-t-lg transition-all ${isHighlight ? 'bg-[#2D7D46]' : 'bg-[#D4EFE1]'}`}
                 style={{ height: `${Math.max(heightPct, 4)}%` }}
               />
             </div>

@@ -26,13 +26,14 @@ const MODE_LABELS: Record<string, string> = {
   walking: 'Marche',
 }
 
+// Icônes identiques à celles des itinéraires (voir SectionPill)
 const MODE_ICONS: Record<string, string> = {
   velo: 'ph:bicycle',
   bicycle: 'ph:bicycle',
   bss_rent: 'ph:bicycle',
   bus: 'ph:bus',
-  tram: 'ph:tram',
-  metro: 'ph:subway',
+  tram: 'ph:train-simple',
+  metro: 'ph:train-simple',
   rapidtransit: 'ph:train',
   walking: 'ph:person-simple-walk',
 }
