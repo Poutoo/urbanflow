@@ -19,9 +19,16 @@ function haversineDistance(coords: number[][]): number {
 }
 import { GbfsService, GbfsStation } from '../gbfs/gbfs.service'
 import { Co2Service } from '../co2/co2.service'
+import { GeoveloService, GeoveloBikeRoute } from '../geovelo/geovelo.service'
 import { CacheService } from '../cache/cache.service'
 import { SearchRoutesDto } from './dto/search-routes.dto'
 import { SearchRoutesResult, RouteResult, RecommendedBikeStation } from './interfaces/route.interface'
+
+// Format datetime Navitia (YYYYMMDDTHHMMSS) attendu par le front pour l'affichage
+function toNavitiaDatetime(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
+}
 
 @Injectable()
 export class RoutesService {
@@ -29,6 +36,7 @@ export class RoutesService {
     private navitia: NavitiaService,
     private gbfs: GbfsService,
     private co2: Co2Service,
+    private geovelo: GeoveloService,
     private cache: CacheService,
   ) {}
 
@@ -41,13 +49,17 @@ export class RoutesService {
       ? new Date(dto.departureTime).toISOString().replace(/[-:]/g, '').split('.')[0]
       : new Date().toISOString().replace(/[-:]/g, '').split('.')[0]
 
-    const [journeys, nearbyStations] = await Promise.all([
+    const [journeys, nearbyStations, bikeRoute] = await Promise.all([
       this.navitia.getJourneys(
         { lat: dto.fromLat, lng: dto.fromLng },
         { lat: dto.toLat, lng: dto.toLng },
         datetime,
       ),
       this.gbfs.getNearbyStations(dto.fromLat, dto.fromLng),
+      this.geovelo.getBikeRoute(
+        { lat: dto.fromLat, lng: dto.fromLng },
+        { lat: dto.toLat, lng: dto.toLng },
+      ),
     ])
 
     const enriched = (journeys as Record<string, unknown>[]).map((journey) => {
@@ -72,9 +84,16 @@ export class RoutesService {
       }
     })
 
+    // Le trajet écologique privilégie le vrai itinéraire Vélib' (Geovelo) quand il
+    // est disponible : sections, durée et CO₂ reflètent alors l'usage réel du vélo.
+    // Sinon on retombe sur le meilleur compromis CO₂/temps parmi les trajets Navitia.
+    const ecological = bikeRoute
+      ? this.buildBikeRoute(bikeRoute)
+      : this.pickMostEcological([...enriched])
+
     const result: SearchRoutesResult = {
       fast: this.pickFastest([...enriched]),
-      ecological: this.pickMostEcological([...enriched]),
+      ecological,
       economic: this.pickCheapest([...enriched]),
       nearbyBikeStations: nearbyStations,
     }
@@ -88,6 +107,35 @@ export class RoutesService {
 
     await this.cache.set(cacheKey, result, 120)
     return result
+  }
+
+  /** Convertit un itinéraire Vélib' Geovelo en RouteResult (une section vélo) */
+  private buildBikeRoute(bike: GeoveloBikeRoute): RouteResult {
+    const co2Kg = this.co2.calculateJourneyCo2([
+      { type: 'bss_rent', length: bike.distanceKm * 1000 },
+    ])
+    const now = new Date()
+    const arrival = new Date(now.getTime() + bike.durationSec * 1000)
+
+    return {
+      id: crypto.randomUUID(),
+      duration: bike.durationSec,
+      departureTime: toNavitiaDatetime(now),
+      arrivalTime: toNavitiaDatetime(arrival),
+      distanceKm: bike.distanceKm,
+      co2Kg,
+      co2SavedKg: this.co2.calculateCo2Saved(co2Kg, bike.distanceKm),
+      isPmrAccessible: false,
+      sections: [
+        {
+          type: 'bss_rent',
+          mode: 'bicycle',
+          duration: bike.durationSec,
+          coordinates: bike.coordinates,
+          estimated: false,
+        },
+      ],
+    }
   }
 
   /** Station Vélib' la plus proche du départ avec au moins un vélo disponible */

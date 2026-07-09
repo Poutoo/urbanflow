@@ -3,6 +3,7 @@ import { RoutesService } from './routes.service'
 import { NavitiaService } from '../navitia/navitia.service'
 import { GbfsService } from '../gbfs/gbfs.service'
 import { Co2Service } from '../co2/co2.service'
+import { GeoveloService } from '../geovelo/geovelo.service'
 import { CacheService } from '../cache/cache.service'
 import { SearchRoutesDto } from './dto/search-routes.dto'
 
@@ -35,6 +36,7 @@ describe('RoutesService', () => {
   let service: RoutesService
   let navitiaGet: jest.Mock
   let gbfsGet: jest.Mock
+  let geoveloGet: jest.Mock
   let cacheGet: jest.Mock
   let cacheSet: jest.Mock
   let co2Calculate: jest.Mock
@@ -48,6 +50,7 @@ describe('RoutesService', () => {
   beforeEach(async () => {
     navitiaGet = jest.fn().mockResolvedValue(JOURNEYS)
     gbfsGet = jest.fn().mockResolvedValue([])
+    geoveloGet = jest.fn().mockResolvedValue(null) // par défaut : pas de vélo → fallback Navitia
     cacheGet = jest.fn().mockResolvedValue(null)
     cacheSet = jest.fn().mockResolvedValue(undefined)
 
@@ -64,6 +67,7 @@ describe('RoutesService', () => {
         RoutesService,
         { provide: NavitiaService, useValue: { getJourneys: navitiaGet } },
         { provide: GbfsService, useValue: { getNearbyStations: gbfsGet } },
+        { provide: GeoveloService, useValue: { getBikeRoute: geoveloGet } },
         {
           provide: Co2Service,
           useValue: {
@@ -83,9 +87,36 @@ describe('RoutesService', () => {
     expect(result.fast?.duration).toBe(600)
   })
 
-  it('selectionne le journey le plus ecologique (co2 min)', async () => {
+  it('selectionne le journey le plus ecologique (co2 min) sans trajet Geovelo', async () => {
+    // geovelo renvoie null par defaut → fallback compromis CO2/temps Navitia
     const result = await service.searchRoutes(DTO)
     expect(result.ecological?.duration).toBe(900)
+  })
+
+  it('utilise le vrai trajet velo Geovelo comme option ecologique quand disponible', async () => {
+    co2Calculate.mockReturnValue(0.02) // valeur par defaut pour le calcul CO2 du velo
+    geoveloGet.mockResolvedValue({
+      durationSec: 1072,
+      distanceKm: 3.585,
+      coordinates: [
+        [2.3522, 48.8566],
+        [2.3708, 48.833],
+      ],
+    })
+
+    const result = await service.searchRoutes(DTO)
+    expect(result.ecological?.duration).toBe(1072)
+    expect(result.ecological?.sections).toHaveLength(1)
+    expect(result.ecological?.sections[0]?.mode).toBe('bicycle')
+    expect(result.ecological?.sections[0]?.coordinates).toHaveLength(2)
+  })
+
+  it('appelle Geovelo pour le trajet velo', async () => {
+    await service.searchRoutes(DTO)
+    expect(geoveloGet).toHaveBeenCalledWith(
+      { lat: DTO.fromLat, lng: DTO.fromLng },
+      { lat: DTO.toLat, lng: DTO.toLng },
+    )
   })
 
   it('ecarte la marche seule trop longue au profit d un trajet realiste', async () => {
