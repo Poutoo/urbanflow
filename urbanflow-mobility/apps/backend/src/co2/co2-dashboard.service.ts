@@ -18,6 +18,15 @@ function toDateKey(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
+// Lundi 00:00 (heure locale) de la semaine calendaire contenant la date donnée
+function getMonday(d: Date): Date {
+  const day = d.getDay() // 0 = dimanche, 1 = lundi, …
+  const monday = new Date(d)
+  monday.setDate(d.getDate() + (day === 0 ? -6 : 1 - day))
+  monday.setHours(0, 0, 0, 0)
+  return monday
+}
+
 @Injectable()
 export class Co2DashboardService {
   constructor(private readonly prisma: PrismaService) {}
@@ -55,11 +64,9 @@ export class Co2DashboardService {
     })
   }
 
-  /** Stats des 7 derniers jours, agrégées par jour (labels L M M J V S D) */
+  /** Stats de la semaine calendaire en cours (lundi → dimanche), agrégées par jour */
   async getWeeklyStats(userId: string): Promise<WeeklyStats> {
-    const since = new Date()
-    since.setDate(since.getDate() - 6)
-    since.setHours(0, 0, 0, 0)
+    const since = getMonday(new Date())
 
     const records = await this.prisma.co2Record.findMany({
       where: { userId, date: { gte: since } },

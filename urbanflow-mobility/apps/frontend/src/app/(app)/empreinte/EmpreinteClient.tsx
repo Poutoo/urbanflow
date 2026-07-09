@@ -108,6 +108,22 @@ export function EmpreinteClient() {
         </div>
       </div>
 
+      {/* Bannière CO₂ évité cette semaine */}
+      <div className="flex items-center gap-3 rounded-2xl bg-[#2D7D46] px-4 py-4 text-white">
+        <span
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15"
+          aria-hidden="true"
+        >
+          <Icon icon="ph:cloud" width={22} />
+        </span>
+        <div>
+          <p className="text-2xl font-bold leading-tight">
+            {data.weekly.totalWeekKg.toFixed(1)} kg
+          </p>
+          <p className="text-sm text-white/85">CO₂ évité cette semaine</p>
+        </div>
+      </div>
+
       {/* Graphique hebdomadaire */}
       <section className="rounded-2xl bg-white p-4 shadow-sm" aria-label="CO₂ évité par jour">
         <h2 className="mb-4 font-semibold text-[#0F1B2D]">CO₂ évité par jour</h2>
