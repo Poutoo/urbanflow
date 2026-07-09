@@ -8,8 +8,14 @@ export const ECO_MOBILE_THRESHOLD_KG = 10
 
 const DAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'] as const
 
+// Clé de jour en heure LOCALE (cohérente avec setHours(0,0,0,0) local).
+// Ne pas utiliser toISOString() ici : le décalage UTC ferait tomber le jour
+// courant hors de la fenêtre glissante pour les fuseaux à offset positif.
 function toDateKey(d: Date): string {
-  return d.toISOString().split('T')[0]!
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 @Injectable()
