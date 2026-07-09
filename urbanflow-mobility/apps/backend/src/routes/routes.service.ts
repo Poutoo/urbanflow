@@ -114,8 +114,45 @@ export class RoutesService {
     return journeys.sort((a, b) => a.duration - b.duration)[0] ?? null
   }
 
+  // Le trajet écologique tolère au plus +50% de temps vs le plus rapide.
+  // Au-delà, un trajet "vert" mais beaucoup plus long est écarté : personne
+  // n'accepte 2h de marche pour économiser quelques grammes de CO₂.
+  private static readonly ECO_TIME_TOLERANCE = 1.5
+
+  // Pondération du score écologique : le CO₂ prime (0.7), le temps pénalise
+  // les détours (0.3). Les deux termes sont normalisés sur le pool retenu.
+  private static readonly ECO_CO2_WEIGHT = 0.7
+  private static readonly ECO_TIME_WEIGHT = 0.3
+
+  /**
+   * Choix "écologique" = meilleur compromis CO₂ / temps, pas le CO₂ minimum
+   * absolu (qui donnerait toujours la marche seule, même 2h plus longue).
+   *
+   *   1. On écarte les trajets déraisonnablement longs (> 1.5× le plus rapide).
+   *   2. Parmi les restants, on minimise un score pondéré CO₂ + temps.
+   *
+   * Résultat : vélo / métro combinés gagnent sur les trajets réalistes ;
+   * la marche seule ne l'emporte que sur les courtes distances.
+   */
   private pickMostEcological(journeys: RouteResult[]): RouteResult | null {
-    return journeys.sort((a, b) => a.co2Kg - b.co2Kg)[0] ?? null
+    if (journeys.length === 0) return null
+
+    const fastestDuration = Math.min(...journeys.map((j) => j.duration))
+    const timeCap = fastestDuration * RoutesService.ECO_TIME_TOLERANCE
+    const acceptable = journeys.filter((j) => j.duration <= timeCap)
+    const pool = acceptable.length > 0 ? acceptable : journeys
+
+    // Normalisation sur le pool pour rendre CO₂ (kg) et temps (s) comparables
+    const maxCo2 = Math.max(...pool.map((j) => j.co2Kg), Number.EPSILON)
+    const minDur = Math.min(...pool.map((j) => j.duration))
+    const maxDur = Math.max(...pool.map((j) => j.duration))
+    const durSpan = maxDur - minDur || 1
+
+    const score = (j: RouteResult) =>
+      RoutesService.ECO_CO2_WEIGHT * (j.co2Kg / maxCo2) +
+      RoutesService.ECO_TIME_WEIGHT * ((j.duration - minDur) / durSpan)
+
+    return [...pool].sort((a, b) => score(a) - score(b))[0] ?? null
   }
 
   private pickCheapest(journeys: RouteResult[]): RouteResult | null {
