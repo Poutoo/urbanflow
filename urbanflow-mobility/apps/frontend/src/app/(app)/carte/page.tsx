@@ -133,8 +133,10 @@ export default function CartePage() {
   const mapLat = geo.lat ?? PARIS_CENTER.lat
   const mapLng = geo.lng ?? PARIS_CENTER.lng
 
-  // Stations Vélib' à proximité, rafraîchies toutes les 30s
-  const stations = useNearbyStations(consentGiven ? geo.lat : null, consentGiven ? geo.lng : null)
+  // Stations Vélib' à proximité, rafraîchies toutes les 30s.
+  // Même fallback Paris que la carte : sans géoloc réelle, on affiche quand
+  // même les stations de démo autour du centre de Paris plutôt que rien.
+  const stations = useNearbyStations(consentGiven ? mapLat : null, consentGiven ? mapLng : null)
 
   return (
     <div className="relative h-[calc(100vh-64px)] w-full">
