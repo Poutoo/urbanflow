@@ -143,6 +143,24 @@ describe('RoutesService', () => {
     expect(navitiaGet).not.toHaveBeenCalled()
   })
 
+  it('attache au trajet ecologique la station Velib la plus proche avec des velos', async () => {
+    gbfsGet.mockResolvedValue([
+      { id: 's1', name: 'Station vide', lat: 48.87, lng: 2.34, bikesAvailable: 0, docksAvailable: 5 },
+      { id: 's2', name: 'Station OK', lat: 48.871, lng: 2.341, bikesAvailable: 4, docksAvailable: 2 },
+    ])
+    const result = await service.searchRoutes(DTO)
+    expect(result.ecological?.recommendedBikeStation?.station.id).toBe('s2')
+    expect(result.ecological?.recommendedBikeStation?.distanceM).toBeGreaterThan(0)
+  })
+
+  it('n attache aucune station si aucune n a de velo disponible', async () => {
+    gbfsGet.mockResolvedValue([
+      { id: 's1', name: 'Station vide', lat: 48.87, lng: 2.34, bikesAvailable: 0, docksAvailable: 5 },
+    ])
+    const result = await service.searchRoutes(DTO)
+    expect(result.ecological?.recommendedBikeStation).toBeUndefined()
+  })
+
   it('inclut les stations velos proches dans le resultat', async () => {
     const stations = [{ id: 's1', name: 'Velib A', lat: 48.87, lng: 2.34, bikesAvailable: 3, docksAvailable: 7 }]
     gbfsGet.mockResolvedValue(stations)

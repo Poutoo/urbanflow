@@ -214,6 +214,7 @@ function ItinerairesContent() {
           userLng={fromLng}
           sections={mapSections}
           stations={mapStations}
+          recommendedStationId={selectedRoute?.recommendedBikeStation?.station.id}
         />
       </div>
 

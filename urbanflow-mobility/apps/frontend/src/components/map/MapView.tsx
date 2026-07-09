@@ -1,5 +1,5 @@
 'use client'
-import { MapContainer, TileLayer } from 'react-leaflet'
+import { MapContainer, TileLayer, Polyline, Tooltip } from 'react-leaflet'
 import L from 'leaflet'
 import { UserMarker } from './UserMarker'
 import { RouteLayer } from './RouteLayer'
@@ -36,13 +36,26 @@ interface Props {
   userLng: number
   sections?: Section[]
   stations?: Station[]
+  // Station Vélib' vers laquelle guider l'utilisateur (trajet écologique)
+  recommendedStationId?: string
 }
 
 const PARIS_CENTER: [number, number] = [48.8566, 2.3522]
 
-export function MapView({ userLat, userLng, sections = [], stations = [] }: Props) {
+export function MapView({
+  userLat,
+  userLng,
+  sections = [],
+  stations = [],
+  recommendedStationId,
+}: Props) {
   const center: [number, number] =
     isNaN(userLat) || isNaN(userLng) ? PARIS_CENTER : [userLat, userLng]
+
+  const recommendedStation = recommendedStationId
+    ? stations.find((s) => s.id === recommendedStationId)
+    : undefined
+  const originValid = !isNaN(userLat) && !isNaN(userLng)
 
   return (
     <MapContainer
@@ -59,7 +72,23 @@ export function MapView({ userLat, userLng, sections = [], stations = [] }: Prop
       />
       <UserMarker lat={userLat} lng={userLng} />
       {sections.length > 0 && <RouteLayer sections={sections} />}
-      {stations.length > 0 && <StationMarkers stations={stations} />}
+
+      {/* Trait de marche pointillé du départ vers le Vélib' recommandé */}
+      {recommendedStation && originValid && (
+        <Polyline
+          positions={[
+            [userLat, userLng],
+            [recommendedStation.lat, recommendedStation.lng],
+          ]}
+          pathOptions={{ color: '#16A34A', weight: 4, opacity: 0.9, dashArray: '4 9' }}
+        >
+          <Tooltip sticky>Marche jusqu’au Vélib’</Tooltip>
+        </Polyline>
+      )}
+
+      {stations.length > 0 && (
+        <StationMarkers stations={stations} highlightId={recommendedStationId} />
+      )}
     </MapContainer>
   )
 }

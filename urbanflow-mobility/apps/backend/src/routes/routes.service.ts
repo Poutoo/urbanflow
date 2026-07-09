@@ -17,11 +17,11 @@ function haversineDistance(coords: number[][]): number {
   }
   return total
 }
-import { GbfsService } from '../gbfs/gbfs.service'
+import { GbfsService, GbfsStation } from '../gbfs/gbfs.service'
 import { Co2Service } from '../co2/co2.service'
 import { CacheService } from '../cache/cache.service'
 import { SearchRoutesDto } from './dto/search-routes.dto'
-import { SearchRoutesResult, RouteResult } from './interfaces/route.interface'
+import { SearchRoutesResult, RouteResult, RecommendedBikeStation } from './interfaces/route.interface'
 
 @Injectable()
 export class RoutesService {
@@ -79,8 +79,34 @@ export class RoutesService {
       nearbyBikeStations: nearbyStations,
     }
 
+    // On dirige l'utilisateur vers un Vélib' pour le trajet écologique :
+    // station la plus proche du départ ayant des vélos disponibles.
+    const bikeStation = this.pickRecommendedBikeStation(dto.fromLat, dto.fromLng, nearbyStations)
+    if (result.ecological && bikeStation) {
+      result.ecological = { ...result.ecological, recommendedBikeStation: bikeStation }
+    }
+
     await this.cache.set(cacheKey, result, 120)
     return result
+  }
+
+  /** Station Vélib' la plus proche du départ avec au moins un vélo disponible */
+  private pickRecommendedBikeStation(
+    fromLat: number,
+    fromLng: number,
+    stations: GbfsStation[],
+  ): RecommendedBikeStation | null {
+    // stations est déjà trié par distance croissante (GbfsService) → le premier
+    // avec des vélos dispo est le plus proche.
+    const station = stations.find((s) => s.bikesAvailable > 0)
+    if (!station) return null
+    const distanceM = Math.round(
+      haversineDistance([
+        [fromLng, fromLat],
+        [station.lng, station.lat],
+      ]),
+    )
+    return { station, distanceM }
   }
 
   private toNavitiaSection(s: Record<string, unknown>) {

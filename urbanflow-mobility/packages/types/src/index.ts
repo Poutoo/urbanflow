@@ -121,6 +121,12 @@ export interface GbfsStation {
   docksAvailable: number;
 }
 
+/** Station Vélib' recommandée au départ d'un trajet écologique + distance à pied */
+export interface RecommendedBikeStation {
+  station: GbfsStation;
+  distanceM: number;
+}
+
 // ─── CO₂ Dashboard ──────────────────────────────────────────────────────────
 
 export interface WeeklyDay {
