@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { usePlaceSuggestions, type PlaceSuggestion } from '@/hooks/usePlaceSuggestions'
+import { useNearbyStations } from '@/hooks/useNearbyStations'
 
 const MapView = dynamic(
   () => import('@/components/map/MapView').then((m) => m.MapView),
@@ -132,10 +133,15 @@ export default function CartePage() {
   const mapLat = geo.lat ?? PARIS_CENTER.lat
   const mapLng = geo.lng ?? PARIS_CENTER.lng
 
+  // Stations Vélib' à proximité, rafraîchies toutes les 30s.
+  // Même fallback Paris que la carte : sans géoloc réelle, on affiche quand
+  // même les stations de démo autour du centre de Paris plutôt que rien.
+  const stations = useNearbyStations(consentGiven ? mapLat : null, consentGiven ? mapLng : null)
+
   return (
     <div className="relative h-[calc(100vh-64px)] w-full">
       {/* Carte full-screen */}
-      <MapView userLat={mapLat} userLng={mapLng} />
+      <MapView userLat={mapLat} userLng={mapLng} stations={stations} />
 
       {/* Barre de recherche + dropdown */}
       <div className="absolute left-1/2 top-4 z-[1000] w-[90%] max-w-md -translate-x-1/2">

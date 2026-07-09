@@ -6,7 +6,8 @@ import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { TransportModes } from '@/components/profile/TransportModes';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import type { PriorityMode, TransportMode } from '@urbanflow/types';
+import { useApiSwr } from '@/hooks/useApiSwr';
+import type { AuthMeResponse, PriorityMode, TransportMode } from '@urbanflow/types';
 
 interface InitialUser {
   name: string;
@@ -38,6 +39,9 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
   const [priorityMode, setPriorityMode] = useState<PriorityMode>('ecological');
   const [pmrEnabled, setPmrEnabled] = useState(false);
 
+  // Badge Éco-mobile + total CO₂ économisé depuis l'API (décerné à 10 kg)
+  const { data: me } = useApiSwr<AuthMeResponse>('/auth/me');
+
   return (
     <div className="flex flex-col gap-4 px-4 pb-6 pt-4">
       {/* Header profil */}
@@ -46,8 +50,13 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
           name={initialUser.name}
           email={initialUser.email}
           avatarUrl={initialUser.avatarUrl}
-          isEcoMobile
+          isEcoMobile={me?.profile.ecoMobileBadge ?? false}
         />
+        {me && (
+          <p className="px-4 pb-3 text-xs text-[#6B7280]">
+            {me.profile.totalCo2SavedKg.toFixed(1)} kg de CO₂ économisés au total
+          </p>
+        )}
       </Card>
 
       {/* Adresses favorites */}

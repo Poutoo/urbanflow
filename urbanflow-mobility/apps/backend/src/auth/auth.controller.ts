@@ -15,7 +15,7 @@ import { RegisterDto } from './dto/register.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
-import type { AuthResponse, AuthUser, JwtPayload } from '@urbanflow/types';
+import type { AuthMeResponse, AuthResponse, AuthUser, JwtPayload } from '@urbanflow/types';
 
 type RequestWithUser = ExpressRequest & { user: AuthUser };
 type RequestWithJwt = ExpressRequest & { user: JwtPayload };
@@ -54,7 +54,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async me(@Req() req: RequestWithJwt): Promise<AuthUser> {
+  async me(@Req() req: RequestWithJwt): Promise<AuthMeResponse> {
     return this.authService.getMe(req.user.sub);
   }
 }

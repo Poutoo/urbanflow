@@ -31,6 +31,20 @@ export interface RefreshPayload {
   refreshToken: string;
 }
 
+/** Résumé du profil retourné par GET /auth/me (badge + progression CO₂ incluse) */
+export interface AuthMeProfile {
+  preferredModes: TransportMode[];
+  priorityMode: PriorityMode;
+  pmrEnabled: boolean;
+  co2Goal: number;
+  totalCo2SavedKg: number;
+  ecoMobileBadge: boolean;
+}
+
+export interface AuthMeResponse extends AuthUser {
+  profile: AuthMeProfile;
+}
+
 // ─── JWT ────────────────────────────────────────────────────────────────────
 
 export interface JwtPayload {
@@ -94,6 +108,56 @@ export interface SavedRoute {
   from: RoutePoint;
   to: RoutePoint;
   createdAt: string;
+}
+
+// ─── GBFS (vélos en libre-service) ────────────────────────────────────────────
+
+export interface GbfsStation {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  bikesAvailable: number;
+  docksAvailable: number;
+}
+
+/** Station Vélib' recommandée au départ d'un trajet écologique + distance à pied */
+export interface RecommendedBikeStation {
+  station: GbfsStation;
+  distanceM: number;
+}
+
+// ─── CO₂ Dashboard ──────────────────────────────────────────────────────────
+
+export interface WeeklyDay {
+  label: string; // "L", "M", "M", "J", "V", "S", "D"
+  date: string; // "2026-07-08"
+  co2SavedKg: number;
+}
+
+export interface WeeklyStats {
+  days: WeeklyDay[];
+  totalWeekKg: number;
+}
+
+export interface MonthlyProgress {
+  savedKg: number;
+  goalKg: number;
+  progressPercent: number;
+  remainingKg: number;
+}
+
+export interface ModeBreakdownItem {
+  mode: string;
+  distanceKm: number;
+  count: number;
+  percentage: number;
+}
+
+export interface Co2Summary {
+  weekly: WeeklyStats;
+  monthly: MonthlyProgress;
+  breakdown: ModeBreakdownItem[];
 }
 
 // ─── API Generic ─────────────────────────────────────────────────────────────

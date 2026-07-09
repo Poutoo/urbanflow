@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { CacheModule } from './cache/cache.module';
 import { RoutesModule } from './routes/routes.module';
 import { PlacesModule } from './places/places.module';
+import { Co2Module } from './co2/co2.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { PlacesModule } from './places/places.module';
     UsersModule,
     RoutesModule,
     PlacesModule,
+    Co2Module,
   ],
 })
 export class AppModule {}

@@ -88,6 +88,26 @@ describe('RoutesService', () => {
     expect(result.ecological?.duration).toBe(900)
   })
 
+  it('ecarte la marche seule trop longue au profit d un trajet realiste', async () => {
+    // J0 : 10 min, metro, co2=0.05 | J1 : 60 min, marche, co2=0 (trop long : +500%)
+    navitiaGet.mockResolvedValue([makeJourney(600, 0, 2), makeJourney(3600, 0, 1)])
+    co2Calculate.mockReset().mockReturnValueOnce(0.05).mockReturnValueOnce(0)
+
+    const result = await service.searchRoutes(DTO)
+    // Le trajet 100% marche (60 min) dépasse le plafond 1.5× → écarté
+    expect(result.ecological?.duration).toBe(600)
+  })
+
+  it('prefere un trajet un peu plus long mais nettement plus vert (dans le plafond)', async () => {
+    // J0 : 600s co2=0.20 (rapide, polluant) | J1 : 800s co2=0.02 (un peu plus long, très vert)
+    navitiaGet.mockResolvedValue([makeJourney(600, 0, 2), makeJourney(800, 0, 2)])
+    co2Calculate.mockReset().mockReturnValueOnce(0.2).mockReturnValueOnce(0.02)
+
+    const result = await service.searchRoutes(DTO)
+    // 800s ≤ 900s (plafond) et CO₂ 10× plus bas → gagne malgré +200s
+    expect(result.ecological?.duration).toBe(800)
+  })
+
   it('selectionne le journey le moins de sections (economique)', async () => {
     const result = await service.searchRoutes(DTO)
     expect(result.economic?.sections.length).toBe(1)
@@ -121,6 +141,24 @@ describe('RoutesService', () => {
     const result = await service.searchRoutes(DTO)
     expect(result).toEqual(cached)
     expect(navitiaGet).not.toHaveBeenCalled()
+  })
+
+  it('attache au trajet ecologique la station Velib la plus proche avec des velos', async () => {
+    gbfsGet.mockResolvedValue([
+      { id: 's1', name: 'Station vide', lat: 48.87, lng: 2.34, bikesAvailable: 0, docksAvailable: 5 },
+      { id: 's2', name: 'Station OK', lat: 48.871, lng: 2.341, bikesAvailable: 4, docksAvailable: 2 },
+    ])
+    const result = await service.searchRoutes(DTO)
+    expect(result.ecological?.recommendedBikeStation?.station.id).toBe('s2')
+    expect(result.ecological?.recommendedBikeStation?.distanceM).toBeGreaterThan(0)
+  })
+
+  it('n attache aucune station si aucune n a de velo disponible', async () => {
+    gbfsGet.mockResolvedValue([
+      { id: 's1', name: 'Station vide', lat: 48.87, lng: 2.34, bikesAvailable: 0, docksAvailable: 5 },
+    ])
+    const result = await service.searchRoutes(DTO)
+    expect(result.ecological?.recommendedBikeStation).toBeUndefined()
   })
 
   it('inclut les stations velos proches dans le resultat', async () => {

@@ -1,5 +1,6 @@
 'use client'
 import { Icon } from '@iconify/react'
+import type { RecommendedBikeStation } from '@urbanflow/types'
 import { SectionPill } from './SectionPill'
 
 export interface RouteSection {
@@ -16,10 +17,12 @@ export interface RouteResult {
   duration: number
   departureTime: string
   arrivalTime: string
+  distanceKm: number
   co2Kg: number
   co2SavedKg: number
   sections: RouteSection[]
   isPmrAccessible: boolean
+  recommendedBikeStation?: RecommendedBikeStation
 }
 
 export type Strategy = 'fast' | 'ecological' | 'economic'
@@ -155,6 +158,16 @@ export function RouteCard({ strategy, route, isSelected, onSelect }: Props) {
             </span>
           )}
         </div>
+
+        {route.recommendedBikeStation && (
+          <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-[#F0FDF4] px-2.5 py-1.5 text-xs font-medium text-[#15803D]">
+            <Icon icon="ph:bicycle" width={14} aria-hidden="true" />
+            <span>
+              Vélib’ à {route.recommendedBikeStation.distanceM} m ·{' '}
+              {route.recommendedBikeStation.station.bikesAvailable} vélos dispo
+            </span>
+          </div>
+        )}
 
         {strategy === 'ecological' && (
           <p className="mt-1 text-[10px] text-[#9CA3AF]">

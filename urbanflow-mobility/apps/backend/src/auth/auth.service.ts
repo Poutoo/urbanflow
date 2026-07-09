@@ -9,7 +9,14 @@ import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
-import type { AuthResponse, AuthUser, JwtPayload } from '@urbanflow/types';
+import type {
+  AuthMeResponse,
+  AuthResponse,
+  AuthUser,
+  JwtPayload,
+  PriorityMode,
+  TransportMode,
+} from '@urbanflow/types';
 
 @Injectable()
 export class AuthService {
@@ -80,13 +87,27 @@ export class AuthService {
     await this.prisma.session.deleteMany({ where: { refreshToken } });
   }
 
-  async getMe(userId: string): Promise<AuthUser> {
+  async getMe(userId: string): Promise<AuthMeResponse> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, name: true, avatarUrl: true },
+      include: { profile: true },
     });
     if (!user) throw new NotFoundException('Utilisateur introuvable');
-    return user;
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      profile: {
+        preferredModes: (user.profile?.preferredModes ?? []) as TransportMode[],
+        priorityMode: (user.profile?.priorityMode ?? 'ecological') as PriorityMode,
+        pmrEnabled: user.profile?.pmrEnabled ?? false,
+        co2Goal: user.profile?.co2Goal ?? 40,
+        totalCo2SavedKg: user.profile?.totalCo2SavedKg ?? 0,
+        ecoMobileBadge: user.profile?.ecoMobileBadge ?? false,
+      },
+    };
   }
 
   private async generateTokenPair(

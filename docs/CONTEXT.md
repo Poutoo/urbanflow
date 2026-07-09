@@ -70,7 +70,12 @@ urbanflow-mobility/
 │   ├── maquettes/         # Captures d'écran High-Fi (référence UI)
 │   ├── CONTEXT.md         # Ce fichier
 │   ├── ARCHITECTURE.md    # Décisions d'architecture
-│   └── SPRINT-1.md        # Plan Sprint 1
+│   ├── SPRINT-1.md        # Plan Sprint 1
+│   ├── SPRINT-2.md        # Plan Sprint 2
+│   ├── SPRINT-3.md        # Plan Sprint 3
+│   ├── SPRINT-4.md        # Plan Sprint 4
+│   ├── END-OF-SPRINT.md   # Prompt pour chaque fin de srpint
+│   └── dossier_pdf.html   # Dossier PDF pour l'examen
 ├── docker-compose.yml     # PostgreSQL + Redis en local
 ├── package.json           # Workspace root (pnpm)
 └── turbo.json             # Turborepo config

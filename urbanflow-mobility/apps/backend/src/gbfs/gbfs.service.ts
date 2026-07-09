@@ -17,9 +17,9 @@ export class GbfsService {
   private readonly logger = new Logger(GbfsService.name)
 
   private readonly STATIONS_URL =
-    'https://velib-metropole-opendata.smoove.pro/opendata/Velib_Metropole/station_status.json'
+    'https://velib-metropole-opendata.smovengo.cloud/opendata/Velib_Metropole/station_status.json'
   private readonly INFO_URL =
-    'https://velib-metropole-opendata.smoove.pro/opendata/Velib_Metropole/station_information.json'
+    'https://velib-metropole-opendata.smovengo.cloud/opendata/Velib_Metropole/station_information.json'
 
   constructor(
     private http: HttpService,
