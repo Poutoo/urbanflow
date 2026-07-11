@@ -5,6 +5,7 @@ import { UserMarker } from './UserMarker'
 import { RouteLayer } from './RouteLayer'
 import { StationMarkers } from './StationMarkers'
 import { AnimatedPolyline } from './AnimatedPolyline'
+import { DestinationMarker } from './DestinationMarker'
 
 // Fix icônes Leaflet cassées dans Next.js (webpack renomme les assets)
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)['_getIconUrl']
@@ -58,6 +59,11 @@ export function MapView({
     : undefined
   const originValid = !isNaN(userLat) && !isNaN(userLng)
 
+  // Point d'arrivée = dernière coordonnée du dernier segment ayant une géométrie
+  const lastSection = [...sections].reverse().find((s) => s.coordinates.length > 0)
+  const lastCoord = lastSection?.coordinates[lastSection.coordinates.length - 1]
+  const destination = lastCoord ? { lng: lastCoord[0]!, lat: lastCoord[1]! } : undefined
+
   return (
     <MapContainer
       center={center}
@@ -93,6 +99,9 @@ export function MapView({
       {stations.length > 0 && (
         <StationMarkers stations={stations} highlightId={recommendedStationId} />
       )}
+
+      {/* Drapeau à damier à l'arrivée */}
+      {destination && <DestinationMarker lat={destination.lat} lng={destination.lng} />}
     </MapContainer>
   )
 }
