@@ -1,9 +1,10 @@
 'use client'
-import { MapContainer, TileLayer, Polyline, Tooltip } from 'react-leaflet'
+import { MapContainer, TileLayer, Tooltip } from 'react-leaflet'
 import L from 'leaflet'
 import { UserMarker } from './UserMarker'
 import { RouteLayer } from './RouteLayer'
 import { StationMarkers } from './StationMarkers'
+import { AnimatedPolyline } from './AnimatedPolyline'
 
 // Fix icônes Leaflet cassées dans Next.js (webpack renomme les assets)
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)['_getIconUrl']
@@ -75,15 +76,18 @@ export function MapView({
 
       {/* Trait de marche pointillé du départ vers le Vélib' recommandé */}
       {recommendedStation && originValid && (
-        <Polyline
+        <AnimatedPolyline
           positions={[
             [userLat, userLng],
             [recommendedStation.lat, recommendedStation.lng],
           ]}
-          pathOptions={{ color: '#16A34A', weight: 4, opacity: 0.9, dashArray: '4 9' }}
+          color="#16A34A"
+          weight={4}
+          opacity={0.9}
+          dashArray="4 9"
         >
           <Tooltip sticky>Marche jusqu’au Vélib’</Tooltip>
-        </Polyline>
+        </AnimatedPolyline>
       )}
 
       {stations.length > 0 && (

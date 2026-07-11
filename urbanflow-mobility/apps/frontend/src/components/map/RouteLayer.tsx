@@ -1,5 +1,6 @@
 'use client'
-import { Polyline, Tooltip } from 'react-leaflet'
+import { Tooltip } from 'react-leaflet'
+import { AnimatedPolyline } from './AnimatedPolyline'
 
 // Normalise les noms de modes Navitia (français, majuscules, accents) vers des clés internes
 const FRENCH_MODE_MAP: Record<string, string> = {
@@ -61,22 +62,21 @@ export function RouteLayer({ sections }: Props) {
           const color = getModeColor(section.type, section.mode)
           const positions = section.coordinates.map(([lng, lat]) => [lat, lng] as [number, number])
           return (
-            <Polyline
+            <AnimatedPolyline
               key={i}
               positions={positions}
-              pathOptions={{
-                color,
-                weight: section.estimated ? 3 : 5,
-                opacity: section.estimated ? 0.55 : 0.9,
-                dashArray: section.estimated ? '10 8' : undefined,
-              }}
+              color={color}
+              weight={section.estimated ? 3 : 5}
+              opacity={section.estimated ? 0.55 : 0.9}
+              dashArray={section.estimated ? '10 8' : undefined}
+              order={i}
             >
               <Tooltip sticky>
                 {section.mode}
                 {section.line ? ` · ${section.line}` : ''} — {Math.round(section.duration / 60)} min
                 {section.estimated ? ' (ligne directe estimée)' : ''}
               </Tooltip>
-            </Polyline>
+            </AnimatedPolyline>
           )
         })}
     </>
