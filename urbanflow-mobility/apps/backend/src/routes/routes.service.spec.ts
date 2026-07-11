@@ -273,6 +273,47 @@ describe('RoutesService', () => {
     expect(result.nearbyBikeStations).toEqual(stations)
   })
 
+  it('recolle les segments : chaque section demarre ou la precedente finit', async () => {
+    const gappyJourney = {
+      duration: 600,
+      departure_date_time: '20260615T083000',
+      arrival_date_time: '20260615T090000',
+      distances: { total: 5000 },
+      sections: [
+        {
+          type: 'street_network',
+          display_informations: {},
+          duration: 120,
+          geojson: {
+            coordinates: [
+              [2.35, 48.85],
+              [2.351, 48.851],
+            ],
+          },
+        },
+        {
+          type: 'public_transport',
+          display_informations: { physical_mode: 'Metro', commercial_mode: 'Metro', label: 'M1' },
+          duration: 480,
+          geojson: {
+            coordinates: [
+              [2.36, 48.86], // trou de ~1 km avec la fin de la marche
+              [2.37, 48.87],
+            ],
+          },
+        },
+      ],
+    }
+    navitiaGet.mockResolvedValue([gappyJourney])
+    co2Calculate.mockReset().mockReturnValue(0.05)
+
+    const result = await service.searchRoutes(DTO)
+    const sections = result.fast!.sections
+    // La 2e section doit commencer exactement ou finit la 1re (continuite du trace)
+    expect(sections[1]!.coordinates[0]).toEqual([2.351, 48.851])
+    expect(sections[0]!.coordinates[sections[0]!.coordinates.length - 1]).toEqual([2.351, 48.851])
+  })
+
   it('retourne null pour les strategies si aucun journey disponible', async () => {
     navitiaGet.mockResolvedValue([])
     const result = await service.searchRoutes(DTO)

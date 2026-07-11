@@ -302,7 +302,7 @@ export class RoutesService {
   }
 
   private formatSections(sections: Record<string, unknown>[]) {
-    return sections
+    const formatted = sections
       .filter((s) => s['type'] !== 'waiting')
       .map((s) => {
         const info = s['display_informations'] as Record<string, unknown> | undefined
@@ -331,5 +331,26 @@ export class RoutesService {
           estimated,
         }
       })
+
+    return this.stitchSections(formatted)
+  }
+
+  /**
+   * Recolle les segments consécutifs : les géométries Navitia ne se touchent pas
+   * (une ligne de métro démarre sur les voies, ~100 m après la sortie piétonne),
+   * ce qui laisse des trous visibles sur la carte. On préfixe chaque segment par
+   * la dernière coordonnée du segment précédent pour assurer la continuité du tracé.
+   */
+  private stitchSections<T extends { coordinates: number[][] }>(sections: T[]): T[] {
+    let lastEnd: number[] | undefined
+    for (const section of sections) {
+      if (section.coordinates.length === 0) continue
+      const start = section.coordinates[0]!
+      if (lastEnd && (lastEnd[0] !== start[0] || lastEnd[1] !== start[1])) {
+        section.coordinates = [lastEnd, ...section.coordinates]
+      }
+      lastEnd = section.coordinates[section.coordinates.length - 1]
+    }
+    return sections
   }
 }
