@@ -111,6 +111,38 @@ describe('RoutesService', () => {
     expect(result.ecological?.sections[0]?.coordinates).toHaveLength(2)
   })
 
+  it('ignore le trajet velo trop long (plafond 30 min) et retombe sur Navitia', async () => {
+    geoveloGet.mockResolvedValue({
+      durationSec: 45 * 60, // 45 min de velo → au-dela du plafond
+      distanceKm: 12,
+      coordinates: [
+        [2.3522, 48.8566],
+        [2.3708, 48.833],
+      ],
+    })
+
+    const result = await service.searchRoutes(DTO)
+    // Fallback compromis CO2/temps Navitia (journey co2 min = 900s)
+    expect(result.ecological?.duration).toBe(900)
+    expect(result.ecological?.sections[0]?.mode).not.toBe('bicycle')
+  })
+
+  it('accepte le trajet velo juste sous le plafond (30 min)', async () => {
+    co2Calculate.mockReturnValue(0.02)
+    geoveloGet.mockResolvedValue({
+      durationSec: 30 * 60, // pile au plafond → accepte
+      distanceKm: 7,
+      coordinates: [
+        [2.3522, 48.8566],
+        [2.3708, 48.833],
+      ],
+    })
+
+    const result = await service.searchRoutes(DTO)
+    expect(result.ecological?.duration).toBe(30 * 60)
+    expect(result.ecological?.sections[0]?.mode).toBe('bicycle')
+  })
+
   it('appelle Geovelo pour le trajet velo', async () => {
     await service.searchRoutes(DTO)
     expect(geoveloGet).toHaveBeenCalledWith(

@@ -85,9 +85,12 @@ export class RoutesService {
     })
 
     // Le trajet écologique privilégie le vrai itinéraire Vélib' (Geovelo) quand il
-    // est disponible : sections, durée et CO₂ reflètent alors l'usage réel du vélo.
-    // Sinon on retombe sur le meilleur compromis CO₂/temps parmi les trajets Navitia.
-    const ecological = bikeRoute
+    // est disponible ET raisonnable : sections, durée et CO₂ reflètent alors l'usage
+    // réel du vélo. Au-delà du plafond (trop long à vélo) ou si Geovelo est indispo,
+    // on retombe sur le meilleur compromis CO₂/temps parmi les trajets Navitia (métro…).
+    const bikeWithinCap =
+      bikeRoute !== null && bikeRoute.durationSec <= RoutesService.MAX_BIKE_ECO_DURATION_SEC
+    const ecological = bikeWithinCap
       ? this.buildBikeRoute(bikeRoute)
       : this.pickMostEcological([...enriched])
 
@@ -197,6 +200,11 @@ export class RoutesService {
   // les détours (0.3). Les deux termes sont normalisés sur le pool retenu.
   private static readonly ECO_CO2_WEIGHT = 0.7
   private static readonly ECO_TIME_WEIGHT = 0.3
+
+  // Plafond de durée du trajet Vélib' pour l'option écologique (30 min).
+  // Au-delà, on préfère un trajet en transports en commun plutôt que d'imposer
+  // une trop longue distance à vélo.
+  private static readonly MAX_BIKE_ECO_DURATION_SEC = 30 * 60
 
   /**
    * Choix "écologique" = meilleur compromis CO₂ / temps, pas le CO₂ minimum
