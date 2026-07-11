@@ -95,12 +95,13 @@ describe('RoutesService', () => {
 
   it('utilise le vrai trajet velo Geovelo comme option ecologique quand disponible', async () => {
     co2Calculate.mockReturnValue(0.02) // valeur par defaut pour le calcul CO2 du velo
+    // Trace demarrant au depart et finissant a l'arrivee : pas de segment de marche
     geoveloGet.mockResolvedValue({
       durationSec: 1072,
       distanceKm: 3.585,
       coordinates: [
-        [2.3522, 48.8566],
-        [2.3708, 48.833],
+        [DTO.fromLng, DTO.fromLat],
+        [DTO.toLng, DTO.toLat],
       ],
     })
 
@@ -108,7 +109,30 @@ describe('RoutesService', () => {
     expect(result.ecological?.duration).toBe(1072)
     expect(result.ecological?.sections).toHaveLength(1)
     expect(result.ecological?.sections[0]?.mode).toBe('bicycle')
-    expect(result.ecological?.sections[0]?.coordinates).toHaveLength(2)
+  })
+
+  it('encadre le trajet velo de segments de marche (vraie origine -> vraie destination)', async () => {
+    co2Calculate.mockReturnValue(0.02)
+    // Le trace Geovelo va de station a station, decale du depart/arrivee reels
+    geoveloGet.mockResolvedValue({
+      durationSec: 600,
+      distanceKm: 3,
+      coordinates: [
+        [2.345, 48.868], // station de retrait, ~loin du depart (2.34, 48.87)
+        [2.358, 48.861], // station de depot, ~loin de l'arrivee (2.36, 48.86)
+      ],
+    })
+
+    const result = await service.searchRoutes(DTO)
+    const secs = result.ecological!.sections
+    // marche -> velo -> marche
+    expect(secs.map((s) => s.mode)).toEqual(['walking', 'bicycle', 'walking'])
+    // part de la vraie origine et finit a la vraie destination
+    expect(secs[0]!.coordinates[0]).toEqual([DTO.fromLng, DTO.fromLat])
+    const lastSeg = secs[secs.length - 1]!
+    expect(lastSeg.coordinates[lastSeg.coordinates.length - 1]).toEqual([DTO.toLng, DTO.toLat])
+    // duree totale = velo + marches
+    expect(result.ecological!.duration).toBeGreaterThan(600)
   })
 
   it('ignore le trajet velo trop long (plafond 30 min) et retombe sur Navitia', async () => {
@@ -133,14 +157,14 @@ describe('RoutesService', () => {
       durationSec: 30 * 60, // pile au plafond → accepte
       distanceKm: 7,
       coordinates: [
-        [2.3522, 48.8566],
-        [2.3708, 48.833],
+        [DTO.fromLng, DTO.fromLat],
+        [DTO.toLng, DTO.toLat],
       ],
     })
 
     const result = await service.searchRoutes(DTO)
     expect(result.ecological?.duration).toBe(30 * 60)
-    expect(result.ecological?.sections[0]?.mode).toBe('bicycle')
+    expect(result.ecological?.sections.some((s) => s.mode === 'bicycle')).toBe(true)
   })
 
   it('ancre la station recommandee sur le depart du trace velo, pas sur le depart utilisateur', async () => {

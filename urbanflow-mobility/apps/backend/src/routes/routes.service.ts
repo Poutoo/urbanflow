@@ -107,7 +107,11 @@ export class RoutesService {
     const bikeWithinCap =
       bikeRoute !== null && bikeRoute.durationSec <= RoutesService.MAX_BIKE_ECO_DURATION_SEC
     const ecological = bikeWithinCap
-      ? this.buildBikeRoute(bikeRoute)
+      ? this.buildBikeRoute(
+          bikeRoute,
+          { lat: dto.fromLat, lng: dto.fromLng },
+          { lat: dto.toLat, lng: dto.toLng },
+        )
       : this.pickMostEcological([...enriched])
 
     const result: SearchRoutesResult = {
@@ -140,32 +144,80 @@ export class RoutesService {
     return result
   }
 
-  /** Convertit un itinéraire Vélib' Geovelo en RouteResult (une section vélo) */
-  private buildBikeRoute(bike: GeoveloBikeRoute): RouteResult {
-    const co2Kg = this.co2.calculateJourneyCo2([
-      { type: 'bss_rent', length: bike.distanceKm * 1000 },
-    ])
+  /**
+   * Convertit un itinéraire Vélib' Geovelo en RouteResult. Le tracé Geovelo va de
+   * station à station : on l'encadre par deux segments de marche (départ → station
+   * de retrait, station de dépôt → destination) pour que le trajet aille de la vraie
+   * origine à la vraie destination, comme les trajets Navitia (drapeau d'arrivée cohérent).
+   */
+  private buildBikeRoute(
+    bike: GeoveloBikeRoute,
+    from: { lat: number; lng: number },
+    to: { lat: number; lng: number },
+  ): RouteResult {
+    const WALK_SPEED_MS = 1.35 // ~4,9 km/h
+    const MIN_WALK_M = 20 // en dessous, on n'ajoute pas de segment de marche
+
+    const origin: [number, number] = [from.lng, from.lat]
+    const dest: [number, number] = [to.lng, to.lat]
+    const bikeStart = bike.coordinates[0]!
+    const bikeEnd = bike.coordinates[bike.coordinates.length - 1]!
+
+    const walkInM = haversineDistance([origin, bikeStart])
+    const walkOutM = haversineDistance([bikeEnd, dest])
+    const walkInSec = Math.round(walkInM / WALK_SPEED_MS)
+    const walkOutSec = Math.round(walkOutM / WALK_SPEED_MS)
+
+    const sections: RouteResult['sections'] = []
+    const co2Sections: { type: string; length: number }[] = []
+
+    if (walkInM > MIN_WALK_M) {
+      sections.push({
+        type: 'walking',
+        mode: 'walking',
+        duration: walkInSec,
+        coordinates: [origin, bikeStart],
+        estimated: true,
+      })
+      co2Sections.push({ type: 'walking', length: walkInM })
+    }
+
+    sections.push({
+      type: 'bss_rent',
+      mode: 'bicycle',
+      duration: bike.durationSec,
+      coordinates: bike.coordinates,
+      estimated: false,
+    })
+    co2Sections.push({ type: 'bss_rent', length: bike.distanceKm * 1000 })
+
+    if (walkOutM > MIN_WALK_M) {
+      sections.push({
+        type: 'walking',
+        mode: 'walking',
+        duration: walkOutSec,
+        coordinates: [bikeEnd, dest],
+        estimated: true,
+      })
+      co2Sections.push({ type: 'walking', length: walkOutM })
+    }
+
+    const totalDuration = bike.durationSec + walkInSec + walkOutSec
+    const totalDistanceKm = bike.distanceKm + (walkInM + walkOutM) / 1000
+    const co2Kg = this.co2.calculateJourneyCo2(co2Sections)
     const now = new Date()
-    const arrival = new Date(now.getTime() + bike.durationSec * 1000)
+    const arrival = new Date(now.getTime() + totalDuration * 1000)
 
     return {
       id: crypto.randomUUID(),
-      duration: bike.durationSec,
+      duration: totalDuration,
       departureTime: toNavitiaDatetime(now),
       arrivalTime: toNavitiaDatetime(arrival),
-      distanceKm: bike.distanceKm,
+      distanceKm: totalDistanceKm,
       co2Kg,
-      co2SavedKg: this.co2.calculateCo2Saved(co2Kg, bike.distanceKm),
+      co2SavedKg: this.co2.calculateCo2Saved(co2Kg, totalDistanceKm),
       isPmrAccessible: false,
-      sections: [
-        {
-          type: 'bss_rent',
-          mode: 'bicycle',
-          duration: bike.durationSec,
-          coordinates: bike.coordinates,
-          estimated: false,
-        },
-      ],
+      sections,
     }
   }
 
