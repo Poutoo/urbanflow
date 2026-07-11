@@ -143,6 +143,27 @@ describe('RoutesService', () => {
     expect(result.ecological?.sections[0]?.mode).toBe('bicycle')
   })
 
+  it('ancre la station recommandee sur le depart du trace velo, pas sur le depart utilisateur', async () => {
+    co2Calculate.mockReturnValue(0.02)
+    // Le trace velo demarre loin du depart utilisateur (48.87, 2.34), pres de s2
+    geoveloGet.mockResolvedValue({
+      durationSec: 600,
+      distanceKm: 3,
+      coordinates: [
+        [2.36, 48.868], // depart du velo = pres de s2
+        [2.37, 48.86],
+      ],
+    })
+    gbfsGet.mockResolvedValue([
+      { id: 's1', name: 'Proche depart utilisateur', lat: 48.8705, lng: 2.3405, bikesAvailable: 5, docksAvailable: 3 },
+      { id: 's2', name: 'Depart du velo', lat: 48.868, lng: 2.36, bikesAvailable: 4, docksAvailable: 2 },
+    ])
+
+    const result = await service.searchRoutes(DTO)
+    // s1 est la plus proche du depart utilisateur, mais l'itineraire velo commence pres de s2
+    expect(result.ecological?.recommendedBikeStation?.station.id).toBe('s2')
+  })
+
   it('appelle Geovelo pour le trajet velo', async () => {
     await service.searchRoutes(DTO)
     expect(geoveloGet).toHaveBeenCalledWith(

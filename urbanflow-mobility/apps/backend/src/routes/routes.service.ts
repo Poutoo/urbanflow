@@ -117,9 +117,21 @@ export class RoutesService {
       nearbyBikeStations: nearbyStations,
     }
 
-    // On dirige l'utilisateur vers un Vélib' pour le trajet écologique :
-    // station la plus proche du départ ayant des vélos disponibles.
-    const bikeStation = this.pickRecommendedBikeStation(dto.fromLat, dto.fromLng, nearbyStations)
+    // On dirige l'utilisateur vers un Vélib' pour le trajet écologique.
+    // Pour un vrai trajet vélo, on ancre la station sur le DÉPART du tracé
+    // (première coordonnée), pour que le trait de marche pointillé mène au même
+    // vélib' que celui où l'itinéraire commence — pas vers une autre station
+    // simplement plus proche du départ utilisateur.
+    const bikeStart = bikeWithinCap && bikeRoute ? bikeRoute.coordinates[0] : undefined
+    const targetLng = bikeStart ? bikeStart[0]! : dto.fromLng
+    const targetLat = bikeStart ? bikeStart[1]! : dto.fromLat
+    const bikeStation = this.pickRecommendedBikeStation(
+      targetLng,
+      targetLat,
+      dto.fromLng,
+      dto.fromLat,
+      nearbyStations,
+    )
     if (result.ecological && bikeStation) {
       result.ecological = { ...result.ecological, recommendedBikeStation: bikeStation }
     }
@@ -157,16 +169,36 @@ export class RoutesService {
     }
   }
 
-  /** Station Vélib' la plus proche du départ avec au moins un vélo disponible */
+  /**
+   * Station Vélib' recommandée pour le trajet écologique.
+   * @param targetLng @param targetLat point d'ancrage — pour un trajet vélo, le
+   *   POINT DE DÉPART du tracé (là où l'itinéraire commence), afin que le trait
+   *   de marche pointillé mène exactement au vélib' où l'itinéraire démarre.
+   *   Pour un trajet en transports en commun, le point de départ de l'utilisateur.
+   * @param fromLng @param fromLat position de l'utilisateur (pour la distance à pied).
+   */
   private pickRecommendedBikeStation(
-    fromLat: number,
+    targetLng: number,
+    targetLat: number,
     fromLng: number,
+    fromLat: number,
     stations: GbfsStation[],
   ): RecommendedBikeStation | null {
-    // stations est déjà trié par distance croissante (GbfsService) → le premier
-    // avec des vélos dispo est le plus proche.
-    const station = stations.find((s) => s.bikesAvailable > 0)
+    let station: GbfsStation | null = null
+    let bestDistance = Infinity
+    for (const s of stations) {
+      if (s.bikesAvailable <= 0) continue
+      const d = haversineDistance([
+        [targetLng, targetLat],
+        [s.lng, s.lat],
+      ])
+      if (d < bestDistance) {
+        bestDistance = d
+        station = s
+      }
+    }
     if (!station) return null
+
     const distanceM = Math.round(
       haversineDistance([
         [fromLng, fromLat],
