@@ -183,6 +183,27 @@ describe('RoutesService', () => {
     expect(result.economic).toBeDefined()
   })
 
+  it('envoie a Navitia l heure locale de Paris (pas UTC)', async () => {
+    await service.searchRoutes(DTO)
+    const datetimeArg: string = navitiaGet.mock.calls[0][2]
+
+    // Heure attendue = maintenant en Europe/Paris (au format YYYYMMDDTHHMM, secondes ignorees)
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/Paris',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(new Date())
+    const g = (t: string) => parts.find((p) => p.type === t)!.value
+    const expectedPrefix = `${g('year')}${g('month')}${g('day')}T${g('hour')}${g('minute')}`
+
+    expect(datetimeArg).toMatch(/^\d{8}T\d{6}$/)
+    expect(datetimeArg.startsWith(expectedPrefix)).toBe(true)
+  })
+
   it('appelle Navitia et GBFS en parallele', async () => {
     await service.searchRoutes(DTO)
     expect(navitiaGet).toHaveBeenCalledTimes(1)

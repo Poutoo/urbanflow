@@ -24,10 +24,26 @@ import { CacheService } from '../cache/cache.service'
 import { SearchRoutesDto } from './dto/search-routes.dto'
 import { SearchRoutesResult, RouteResult, RecommendedBikeStation } from './interfaces/route.interface'
 
-// Format datetime Navitia (YYYYMMDDTHHMMSS) attendu par le front pour l'affichage
+// Fuseau de la couverture Navitia (Île-de-France). On formate toujours dans ce
+// fuseau, indépendamment du fuseau du serveur (UTC en prod), sinon Navitia
+// interprète une heure UTC comme heure locale et décale l'itinéraire de 1 à 2h.
+const COVERAGE_TIMEZONE = 'Europe/Paris'
+
+// Format datetime Navitia (YYYYMMDDTHHMMSS) en heure locale de la couverture,
+// attendu à la fois par l'API Navitia (requête) et par le front (affichage).
 function toNavitiaDatetime(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: COVERAGE_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(d)
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '00'
+  return `${get('year')}${get('month')}${get('day')}T${get('hour')}${get('minute')}${get('second')}`
 }
 
 @Injectable()
@@ -45,9 +61,9 @@ export class RoutesService {
     const cached = await this.cache.get<SearchRoutesResult>(cacheKey)
     if (cached) return cached
 
-    const datetime = dto.departureTime
-      ? new Date(dto.departureTime).toISOString().replace(/[-:]/g, '').split('.')[0]
-      : new Date().toISOString().replace(/[-:]/g, '').split('.')[0]
+    // Heure locale de la couverture (Paris), pas UTC : sinon Navitia planifie
+    // un trajet décalé de 1 à 2h et affiche une heure d'arrivée illogique.
+    const datetime = toNavitiaDatetime(dto.departureTime ? new Date(dto.departureTime) : new Date())
 
     const [journeys, nearbyStations, bikeRoute] = await Promise.all([
       this.navitia.getJourneys(
