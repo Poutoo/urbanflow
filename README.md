@@ -54,7 +54,7 @@ L'application est conçue **mobile-first**, installable sur smartphone, et fonct
 | Profil utilisateur | Modes préférés, adresses favorites, objectif CO₂ |
 | Accessibilité PMR | Préférences sans escaliers, itinéraires filtrés |
 
-### Sprint 2 — Planificateur multimodal `[En cours]`
+### Sprint 2 — Planificateur multimodal `[Livré]`
 
 | Fonctionnalité | Détail |
 |---|---|
