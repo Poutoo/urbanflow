@@ -67,7 +67,7 @@ L'application est conçue **mobile-first**, installable sur smartphone, et fonct
 | 3 stratégies d'itinéraire | Rapide / Écologique / Économique |
 | Filtre PMR | Affichage des itinéraires accessibles uniquement |
 
-### Sprint 3 — Dashboard CO₂ `[Planifié]`
+### Sprint 3 — Dashboard CO₂ `[En cours]`
 
 - Dashboard personnel CO₂ (graphique hebdomadaire + objectif mensuel)
 - Gamification : badge "Éco-mobile"
@@ -535,8 +535,8 @@ lint → test → build
 | Sprint | Objectif | Statut |
 |---|---|---|
 | Sprint 1 | Auth email/password + Google OAuth, profil utilisateur, CI/CD | Livré |
-| Sprint 2 | Carte Leaflet, Navitia.io, GBFS, calcul CO₂, 3 stratégies | En cours |
-| Sprint 3 | Dashboard CO₂ personnel, historique trajets, gamification | Planifié |
+| Sprint 2 | Carte Leaflet, Navitia.io, GBFS, calcul CO₂, 3 stratégies | Livré |
+| Sprint 3 | Dashboard CO₂ personnel, historique trajets, gamification | En cours |
 | Sprint 4 | PWA offline, Service Worker, Lighthouse ≥ 90, tests E2E Cypress | Planifié |
 
 ---
