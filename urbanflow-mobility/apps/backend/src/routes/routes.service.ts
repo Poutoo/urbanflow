@@ -19,9 +19,32 @@ function haversineDistance(coords: number[][]): number {
 }
 import { GbfsService, GbfsStation } from '../gbfs/gbfs.service'
 import { Co2Service } from '../co2/co2.service'
+import { GeoveloService, GeoveloBikeRoute } from '../geovelo/geovelo.service'
 import { CacheService } from '../cache/cache.service'
 import { SearchRoutesDto } from './dto/search-routes.dto'
 import { SearchRoutesResult, RouteResult, RecommendedBikeStation } from './interfaces/route.interface'
+
+// Fuseau de la couverture Navitia (Île-de-France). On formate toujours dans ce
+// fuseau, indépendamment du fuseau du serveur (UTC en prod), sinon Navitia
+// interprète une heure UTC comme heure locale et décale l'itinéraire de 1 à 2h.
+const COVERAGE_TIMEZONE = 'Europe/Paris'
+
+// Format datetime Navitia (YYYYMMDDTHHMMSS) en heure locale de la couverture,
+// attendu à la fois par l'API Navitia (requête) et par le front (affichage).
+function toNavitiaDatetime(d: Date): string {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: COVERAGE_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(d)
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '00'
+  return `${get('year')}${get('month')}${get('day')}T${get('hour')}${get('minute')}${get('second')}`
+}
 
 @Injectable()
 export class RoutesService {
@@ -29,6 +52,7 @@ export class RoutesService {
     private navitia: NavitiaService,
     private gbfs: GbfsService,
     private co2: Co2Service,
+    private geovelo: GeoveloService,
     private cache: CacheService,
   ) {}
 
@@ -37,17 +61,21 @@ export class RoutesService {
     const cached = await this.cache.get<SearchRoutesResult>(cacheKey)
     if (cached) return cached
 
-    const datetime = dto.departureTime
-      ? new Date(dto.departureTime).toISOString().replace(/[-:]/g, '').split('.')[0]
-      : new Date().toISOString().replace(/[-:]/g, '').split('.')[0]
+    // Heure locale de la couverture (Paris), pas UTC : sinon Navitia planifie
+    // un trajet décalé de 1 à 2h et affiche une heure d'arrivée illogique.
+    const datetime = toNavitiaDatetime(dto.departureTime ? new Date(dto.departureTime) : new Date())
 
-    const [journeys, nearbyStations] = await Promise.all([
+    const [journeys, nearbyStations, bikeRoute] = await Promise.all([
       this.navitia.getJourneys(
         { lat: dto.fromLat, lng: dto.fromLng },
         { lat: dto.toLat, lng: dto.toLng },
         datetime,
       ),
       this.gbfs.getNearbyStations(dto.fromLat, dto.fromLng),
+      this.geovelo.getBikeRoute(
+        { lat: dto.fromLat, lng: dto.fromLng },
+        { lat: dto.toLat, lng: dto.toLng },
+      ),
     ])
 
     const enriched = (journeys as Record<string, unknown>[]).map((journey) => {
@@ -72,16 +100,42 @@ export class RoutesService {
       }
     })
 
+    // Le trajet écologique privilégie le vrai itinéraire Vélib' (Geovelo) quand il
+    // est disponible ET raisonnable : sections, durée et CO₂ reflètent alors l'usage
+    // réel du vélo. Au-delà du plafond (trop long à vélo) ou si Geovelo est indispo,
+    // on retombe sur le meilleur compromis CO₂/temps parmi les trajets Navitia (métro…).
+    const bikeWithinCap =
+      bikeRoute !== null && bikeRoute.durationSec <= RoutesService.MAX_BIKE_ECO_DURATION_SEC
+    const ecological = bikeWithinCap
+      ? this.buildBikeRoute(
+          bikeRoute,
+          { lat: dto.fromLat, lng: dto.fromLng },
+          { lat: dto.toLat, lng: dto.toLng },
+        )
+      : this.pickMostEcological([...enriched])
+
     const result: SearchRoutesResult = {
       fast: this.pickFastest([...enriched]),
-      ecological: this.pickMostEcological([...enriched]),
+      ecological,
       economic: this.pickCheapest([...enriched]),
       nearbyBikeStations: nearbyStations,
     }
 
-    // On dirige l'utilisateur vers un Vélib' pour le trajet écologique :
-    // station la plus proche du départ ayant des vélos disponibles.
-    const bikeStation = this.pickRecommendedBikeStation(dto.fromLat, dto.fromLng, nearbyStations)
+    // On dirige l'utilisateur vers un Vélib' pour le trajet écologique.
+    // Pour un vrai trajet vélo, on ancre la station sur le DÉPART du tracé
+    // (première coordonnée), pour que le trait de marche pointillé mène au même
+    // vélib' que celui où l'itinéraire commence — pas vers une autre station
+    // simplement plus proche du départ utilisateur.
+    const bikeStart = bikeWithinCap && bikeRoute ? bikeRoute.coordinates[0] : undefined
+    const targetLng = bikeStart ? bikeStart[0]! : dto.fromLng
+    const targetLat = bikeStart ? bikeStart[1]! : dto.fromLat
+    const bikeStation = this.pickRecommendedBikeStation(
+      targetLng,
+      targetLat,
+      dto.fromLng,
+      dto.fromLat,
+      nearbyStations,
+    )
     if (result.ecological && bikeStation) {
       result.ecological = { ...result.ecological, recommendedBikeStation: bikeStation }
     }
@@ -90,16 +144,113 @@ export class RoutesService {
     return result
   }
 
-  /** Station Vélib' la plus proche du départ avec au moins un vélo disponible */
+  /**
+   * Convertit un itinéraire Vélib' Geovelo en RouteResult. Le tracé Geovelo va de
+   * station à station : on l'encadre par deux segments de marche (départ → station
+   * de retrait, station de dépôt → destination) pour que le trajet aille de la vraie
+   * origine à la vraie destination, comme les trajets Navitia (drapeau d'arrivée cohérent).
+   */
+  private buildBikeRoute(
+    bike: GeoveloBikeRoute,
+    from: { lat: number; lng: number },
+    to: { lat: number; lng: number },
+  ): RouteResult {
+    const WALK_SPEED_MS = 1.35 // ~4,9 km/h
+    const MIN_WALK_M = 20 // en dessous, on n'ajoute pas de segment de marche
+
+    const origin: [number, number] = [from.lng, from.lat]
+    const dest: [number, number] = [to.lng, to.lat]
+    const bikeStart = bike.coordinates[0]!
+    const bikeEnd = bike.coordinates[bike.coordinates.length - 1]!
+
+    const walkInM = haversineDistance([origin, bikeStart])
+    const walkOutM = haversineDistance([bikeEnd, dest])
+    const walkInSec = Math.round(walkInM / WALK_SPEED_MS)
+    const walkOutSec = Math.round(walkOutM / WALK_SPEED_MS)
+
+    const sections: RouteResult['sections'] = []
+    const co2Sections: { type: string; length: number }[] = []
+
+    if (walkInM > MIN_WALK_M) {
+      sections.push({
+        type: 'walking',
+        mode: 'walking',
+        duration: walkInSec,
+        coordinates: [origin, bikeStart],
+        estimated: true,
+      })
+      co2Sections.push({ type: 'walking', length: walkInM })
+    }
+
+    sections.push({
+      type: 'bss_rent',
+      mode: 'bicycle',
+      duration: bike.durationSec,
+      coordinates: bike.coordinates,
+      estimated: false,
+    })
+    co2Sections.push({ type: 'bss_rent', length: bike.distanceKm * 1000 })
+
+    if (walkOutM > MIN_WALK_M) {
+      sections.push({
+        type: 'walking',
+        mode: 'walking',
+        duration: walkOutSec,
+        coordinates: [bikeEnd, dest],
+        estimated: true,
+      })
+      co2Sections.push({ type: 'walking', length: walkOutM })
+    }
+
+    const totalDuration = bike.durationSec + walkInSec + walkOutSec
+    const totalDistanceKm = bike.distanceKm + (walkInM + walkOutM) / 1000
+    const co2Kg = this.co2.calculateJourneyCo2(co2Sections)
+    const now = new Date()
+    const arrival = new Date(now.getTime() + totalDuration * 1000)
+
+    return {
+      id: crypto.randomUUID(),
+      duration: totalDuration,
+      departureTime: toNavitiaDatetime(now),
+      arrivalTime: toNavitiaDatetime(arrival),
+      distanceKm: totalDistanceKm,
+      co2Kg,
+      co2SavedKg: this.co2.calculateCo2Saved(co2Kg, totalDistanceKm),
+      isPmrAccessible: false,
+      sections,
+    }
+  }
+
+  /**
+   * Station Vélib' recommandée pour le trajet écologique.
+   * @param targetLng @param targetLat point d'ancrage — pour un trajet vélo, le
+   *   POINT DE DÉPART du tracé (là où l'itinéraire commence), afin que le trait
+   *   de marche pointillé mène exactement au vélib' où l'itinéraire démarre.
+   *   Pour un trajet en transports en commun, le point de départ de l'utilisateur.
+   * @param fromLng @param fromLat position de l'utilisateur (pour la distance à pied).
+   */
   private pickRecommendedBikeStation(
-    fromLat: number,
+    targetLng: number,
+    targetLat: number,
     fromLng: number,
+    fromLat: number,
     stations: GbfsStation[],
   ): RecommendedBikeStation | null {
-    // stations est déjà trié par distance croissante (GbfsService) → le premier
-    // avec des vélos dispo est le plus proche.
-    const station = stations.find((s) => s.bikesAvailable > 0)
+    let station: GbfsStation | null = null
+    let bestDistance = Infinity
+    for (const s of stations) {
+      if (s.bikesAvailable <= 0) continue
+      const d = haversineDistance([
+        [targetLng, targetLat],
+        [s.lng, s.lat],
+      ])
+      if (d < bestDistance) {
+        bestDistance = d
+        station = s
+      }
+    }
     if (!station) return null
+
     const distanceM = Math.round(
       haversineDistance([
         [fromLng, fromLat],
@@ -150,6 +301,11 @@ export class RoutesService {
   private static readonly ECO_CO2_WEIGHT = 0.7
   private static readonly ECO_TIME_WEIGHT = 0.3
 
+  // Plafond de durée du trajet Vélib' pour l'option écologique (30 min).
+  // Au-delà, on préfère un trajet en transports en commun plutôt que d'imposer
+  // une trop longue distance à vélo.
+  private static readonly MAX_BIKE_ECO_DURATION_SEC = 30 * 60
+
   /**
    * Choix "écologique" = meilleur compromis CO₂ / temps, pas le CO₂ minimum
    * absolu (qui donnerait toujours la marche seule, même 2h plus longue).
@@ -198,7 +354,7 @@ export class RoutesService {
   }
 
   private formatSections(sections: Record<string, unknown>[]) {
-    return sections
+    const formatted = sections
       .filter((s) => s['type'] !== 'waiting')
       .map((s) => {
         const info = s['display_informations'] as Record<string, unknown> | undefined
@@ -227,5 +383,26 @@ export class RoutesService {
           estimated,
         }
       })
+
+    return this.stitchSections(formatted)
+  }
+
+  /**
+   * Recolle les segments consécutifs : les géométries Navitia ne se touchent pas
+   * (une ligne de métro démarre sur les voies, ~100 m après la sortie piétonne),
+   * ce qui laisse des trous visibles sur la carte. On préfixe chaque segment par
+   * la dernière coordonnée du segment précédent pour assurer la continuité du tracé.
+   */
+  private stitchSections<T extends { coordinates: number[][] }>(sections: T[]): T[] {
+    let lastEnd: number[] | undefined
+    for (const section of sections) {
+      if (section.coordinates.length === 0) continue
+      const start = section.coordinates[0]!
+      if (lastEnd && (lastEnd[0] !== start[0] || lastEnd[1] !== start[1])) {
+        section.coordinates = [lastEnd, ...section.coordinates]
+      }
+      lastEnd = section.coordinates[section.coordinates.length - 1]
+    }
+    return sections
   }
 }

@@ -3,6 +3,7 @@ import { RoutesService } from './routes.service'
 import { NavitiaService } from '../navitia/navitia.service'
 import { GbfsService } from '../gbfs/gbfs.service'
 import { Co2Service } from '../co2/co2.service'
+import { GeoveloService } from '../geovelo/geovelo.service'
 import { CacheService } from '../cache/cache.service'
 import { SearchRoutesDto } from './dto/search-routes.dto'
 
@@ -35,6 +36,7 @@ describe('RoutesService', () => {
   let service: RoutesService
   let navitiaGet: jest.Mock
   let gbfsGet: jest.Mock
+  let geoveloGet: jest.Mock
   let cacheGet: jest.Mock
   let cacheSet: jest.Mock
   let co2Calculate: jest.Mock
@@ -48,6 +50,7 @@ describe('RoutesService', () => {
   beforeEach(async () => {
     navitiaGet = jest.fn().mockResolvedValue(JOURNEYS)
     gbfsGet = jest.fn().mockResolvedValue([])
+    geoveloGet = jest.fn().mockResolvedValue(null) // par défaut : pas de vélo → fallback Navitia
     cacheGet = jest.fn().mockResolvedValue(null)
     cacheSet = jest.fn().mockResolvedValue(undefined)
 
@@ -64,6 +67,7 @@ describe('RoutesService', () => {
         RoutesService,
         { provide: NavitiaService, useValue: { getJourneys: navitiaGet } },
         { provide: GbfsService, useValue: { getNearbyStations: gbfsGet } },
+        { provide: GeoveloService, useValue: { getBikeRoute: geoveloGet } },
         {
           provide: Co2Service,
           useValue: {
@@ -83,9 +87,113 @@ describe('RoutesService', () => {
     expect(result.fast?.duration).toBe(600)
   })
 
-  it('selectionne le journey le plus ecologique (co2 min)', async () => {
+  it('selectionne le journey le plus ecologique (co2 min) sans trajet Geovelo', async () => {
+    // geovelo renvoie null par defaut → fallback compromis CO2/temps Navitia
     const result = await service.searchRoutes(DTO)
     expect(result.ecological?.duration).toBe(900)
+  })
+
+  it('utilise le vrai trajet velo Geovelo comme option ecologique quand disponible', async () => {
+    co2Calculate.mockReturnValue(0.02) // valeur par defaut pour le calcul CO2 du velo
+    // Trace demarrant au depart et finissant a l'arrivee : pas de segment de marche
+    geoveloGet.mockResolvedValue({
+      durationSec: 1072,
+      distanceKm: 3.585,
+      coordinates: [
+        [DTO.fromLng, DTO.fromLat],
+        [DTO.toLng, DTO.toLat],
+      ],
+    })
+
+    const result = await service.searchRoutes(DTO)
+    expect(result.ecological?.duration).toBe(1072)
+    expect(result.ecological?.sections).toHaveLength(1)
+    expect(result.ecological?.sections[0]?.mode).toBe('bicycle')
+  })
+
+  it('encadre le trajet velo de segments de marche (vraie origine -> vraie destination)', async () => {
+    co2Calculate.mockReturnValue(0.02)
+    // Le trace Geovelo va de station a station, decale du depart/arrivee reels
+    geoveloGet.mockResolvedValue({
+      durationSec: 600,
+      distanceKm: 3,
+      coordinates: [
+        [2.345, 48.868], // station de retrait, ~loin du depart (2.34, 48.87)
+        [2.358, 48.861], // station de depot, ~loin de l'arrivee (2.36, 48.86)
+      ],
+    })
+
+    const result = await service.searchRoutes(DTO)
+    const secs = result.ecological!.sections
+    // marche -> velo -> marche
+    expect(secs.map((s) => s.mode)).toEqual(['walking', 'bicycle', 'walking'])
+    // part de la vraie origine et finit a la vraie destination
+    expect(secs[0]!.coordinates[0]).toEqual([DTO.fromLng, DTO.fromLat])
+    const lastSeg = secs[secs.length - 1]!
+    expect(lastSeg.coordinates[lastSeg.coordinates.length - 1]).toEqual([DTO.toLng, DTO.toLat])
+    // duree totale = velo + marches
+    expect(result.ecological!.duration).toBeGreaterThan(600)
+  })
+
+  it('ignore le trajet velo trop long (plafond 30 min) et retombe sur Navitia', async () => {
+    geoveloGet.mockResolvedValue({
+      durationSec: 45 * 60, // 45 min de velo → au-dela du plafond
+      distanceKm: 12,
+      coordinates: [
+        [2.3522, 48.8566],
+        [2.3708, 48.833],
+      ],
+    })
+
+    const result = await service.searchRoutes(DTO)
+    // Fallback compromis CO2/temps Navitia (journey co2 min = 900s)
+    expect(result.ecological?.duration).toBe(900)
+    expect(result.ecological?.sections[0]?.mode).not.toBe('bicycle')
+  })
+
+  it('accepte le trajet velo juste sous le plafond (30 min)', async () => {
+    co2Calculate.mockReturnValue(0.02)
+    geoveloGet.mockResolvedValue({
+      durationSec: 30 * 60, // pile au plafond → accepte
+      distanceKm: 7,
+      coordinates: [
+        [DTO.fromLng, DTO.fromLat],
+        [DTO.toLng, DTO.toLat],
+      ],
+    })
+
+    const result = await service.searchRoutes(DTO)
+    expect(result.ecological?.duration).toBe(30 * 60)
+    expect(result.ecological?.sections.some((s) => s.mode === 'bicycle')).toBe(true)
+  })
+
+  it('ancre la station recommandee sur le depart du trace velo, pas sur le depart utilisateur', async () => {
+    co2Calculate.mockReturnValue(0.02)
+    // Le trace velo demarre loin du depart utilisateur (48.87, 2.34), pres de s2
+    geoveloGet.mockResolvedValue({
+      durationSec: 600,
+      distanceKm: 3,
+      coordinates: [
+        [2.36, 48.868], // depart du velo = pres de s2
+        [2.37, 48.86],
+      ],
+    })
+    gbfsGet.mockResolvedValue([
+      { id: 's1', name: 'Proche depart utilisateur', lat: 48.8705, lng: 2.3405, bikesAvailable: 5, docksAvailable: 3 },
+      { id: 's2', name: 'Depart du velo', lat: 48.868, lng: 2.36, bikesAvailable: 4, docksAvailable: 2 },
+    ])
+
+    const result = await service.searchRoutes(DTO)
+    // s1 est la plus proche du depart utilisateur, mais l'itineraire velo commence pres de s2
+    expect(result.ecological?.recommendedBikeStation?.station.id).toBe('s2')
+  })
+
+  it('appelle Geovelo pour le trajet velo', async () => {
+    await service.searchRoutes(DTO)
+    expect(geoveloGet).toHaveBeenCalledWith(
+      { lat: DTO.fromLat, lng: DTO.fromLng },
+      { lat: DTO.toLat, lng: DTO.toLng },
+    )
   })
 
   it('ecarte la marche seule trop longue au profit d un trajet realiste', async () => {
@@ -118,6 +226,27 @@ describe('RoutesService', () => {
     expect(result.fast).toBeDefined()
     expect(result.ecological).toBeDefined()
     expect(result.economic).toBeDefined()
+  })
+
+  it('envoie a Navitia l heure locale de Paris (pas UTC)', async () => {
+    await service.searchRoutes(DTO)
+    const datetimeArg: string = navitiaGet.mock.calls[0][2]
+
+    // Heure attendue = maintenant en Europe/Paris (au format YYYYMMDDTHHMM, secondes ignorees)
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/Paris',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(new Date())
+    const g = (t: string) => parts.find((p) => p.type === t)!.value
+    const expectedPrefix = `${g('year')}${g('month')}${g('day')}T${g('hour')}${g('minute')}`
+
+    expect(datetimeArg).toMatch(/^\d{8}T\d{6}$/)
+    expect(datetimeArg.startsWith(expectedPrefix)).toBe(true)
   })
 
   it('appelle Navitia et GBFS en parallele', async () => {
@@ -166,6 +295,47 @@ describe('RoutesService', () => {
     gbfsGet.mockResolvedValue(stations)
     const result = await service.searchRoutes(DTO)
     expect(result.nearbyBikeStations).toEqual(stations)
+  })
+
+  it('recolle les segments : chaque section demarre ou la precedente finit', async () => {
+    const gappyJourney = {
+      duration: 600,
+      departure_date_time: '20260615T083000',
+      arrival_date_time: '20260615T090000',
+      distances: { total: 5000 },
+      sections: [
+        {
+          type: 'street_network',
+          display_informations: {},
+          duration: 120,
+          geojson: {
+            coordinates: [
+              [2.35, 48.85],
+              [2.351, 48.851],
+            ],
+          },
+        },
+        {
+          type: 'public_transport',
+          display_informations: { physical_mode: 'Metro', commercial_mode: 'Metro', label: 'M1' },
+          duration: 480,
+          geojson: {
+            coordinates: [
+              [2.36, 48.86], // trou de ~1 km avec la fin de la marche
+              [2.37, 48.87],
+            ],
+          },
+        },
+      ],
+    }
+    navitiaGet.mockResolvedValue([gappyJourney])
+    co2Calculate.mockReset().mockReturnValue(0.05)
+
+    const result = await service.searchRoutes(DTO)
+    const sections = result.fast!.sections
+    // La 2e section doit commencer exactement ou finit la 1re (continuite du trace)
+    expect(sections[1]!.coordinates[0]).toEqual([2.351, 48.851])
+    expect(sections[0]!.coordinates[sections[0]!.coordinates.length - 1]).toEqual([2.351, 48.851])
   })
 
   it('retourne null pour les strategies si aucun journey disponible', async () => {

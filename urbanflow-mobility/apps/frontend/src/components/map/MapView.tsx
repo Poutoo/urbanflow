@@ -1,9 +1,10 @@
 'use client'
-import { MapContainer, TileLayer, Polyline, Tooltip } from 'react-leaflet'
+import { MapContainer, TileLayer } from 'react-leaflet'
 import L from 'leaflet'
 import { UserMarker } from './UserMarker'
 import { RouteLayer } from './RouteLayer'
 import { StationMarkers } from './StationMarkers'
+import { DestinationMarker } from './DestinationMarker'
 
 // Fix icônes Leaflet cassées dans Next.js (webpack renomme les assets)
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)['_getIconUrl']
@@ -52,10 +53,10 @@ export function MapView({
   const center: [number, number] =
     isNaN(userLat) || isNaN(userLng) ? PARIS_CENTER : [userLat, userLng]
 
-  const recommendedStation = recommendedStationId
-    ? stations.find((s) => s.id === recommendedStationId)
-    : undefined
-  const originValid = !isNaN(userLat) && !isNaN(userLng)
+  // Point d'arrivée = dernière coordonnée du dernier segment ayant une géométrie
+  const lastSection = [...sections].reverse().find((s) => s.coordinates.length > 0)
+  const lastCoord = lastSection?.coordinates[lastSection.coordinates.length - 1]
+  const destination = lastCoord ? { lng: lastCoord[0]!, lat: lastCoord[1]! } : undefined
 
   return (
     <MapContainer
@@ -73,22 +74,12 @@ export function MapView({
       <UserMarker lat={userLat} lng={userLng} />
       {sections.length > 0 && <RouteLayer sections={sections} />}
 
-      {/* Trait de marche pointillé du départ vers le Vélib' recommandé */}
-      {recommendedStation && originValid && (
-        <Polyline
-          positions={[
-            [userLat, userLng],
-            [recommendedStation.lat, recommendedStation.lng],
-          ]}
-          pathOptions={{ color: '#16A34A', weight: 4, opacity: 0.9, dashArray: '4 9' }}
-        >
-          <Tooltip sticky>Marche jusqu’au Vélib’</Tooltip>
-        </Polyline>
-      )}
-
       {stations.length > 0 && (
         <StationMarkers stations={stations} highlightId={recommendedStationId} />
       )}
+
+      {/* Drapeau à damier à l'arrivée */}
+      {destination && <DestinationMarker lat={destination.lat} lng={destination.lng} />}
     </MapContainer>
   )
 }
