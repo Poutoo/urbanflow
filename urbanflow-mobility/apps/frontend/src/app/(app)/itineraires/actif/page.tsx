@@ -3,7 +3,7 @@ import dynamic from 'next/dynamic'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Icon } from '@iconify/react'
-import { useWatchPosition } from '@/hooks/useWatchPosition'
+import { useAnimatedLatLng } from '@/hooks/useAnimatedLatLng'
 import type { RouteResult, RouteSection, Strategy } from '@/components/routes/RouteCard'
 
 const MapView = dynamic(() => import('@/components/map/MapView').then((m) => m.MapView), {
@@ -75,7 +75,6 @@ function ActiveJourneyContent() {
   const [route, setRoute] = useState<RouteResult | null>(null)
   const [hydrated, setHydrated] = useState(false)
   const [activeStep, setActiveStep] = useState(0)
-  const geo = useWatchPosition(true)
 
   useEffect(() => {
     try {
@@ -97,11 +96,20 @@ function ActiveJourneyContent() {
     [route],
   )
 
-  // Point de départ du tracé pour centrer la carte avant le premier fix GPS
+  // Point de départ du tracé : position initiale du marqueur simulé (étape 0)
   const routeStart = useMemo(() => {
     const first = sections.find((s) => s.coordinates.length > 0)?.coordinates[0]
     return first ? { lat: first[1]!, lng: first[0]! } : PARIS
   }, [sections])
+
+  // Simulation de la progression : quand l'utilisateur avance d'étape, le point
+  // glisse jusqu'au début de la nouvelle étape (= fin de la précédente, sections
+  // recollées). Utile pour tester/démontrer le suivi sans se déplacer réellement.
+  const stepStart = useMemo(() => {
+    const coord = sections[activeStep]?.coordinates[0]
+    return coord ? ([coord[1]!, coord[0]!] as [number, number]) : ([routeStart.lat, routeStart.lng] as [number, number])
+  }, [sections, activeStep, routeStart])
+  const simulatedPosition = useAnimatedLatLng(stepStart)
 
   if (hydrated && !route) {
     return (
@@ -126,8 +134,10 @@ function ActiveJourneyContent() {
     return <div className="h-[calc(100vh-64px)] animate-pulse bg-gray-100" />
   }
 
-  const userLat = geo.lat ?? routeStart.lat
-  const userLng = geo.lng ?? routeStart.lng
+  // La position affichée suit la progression simulée par étape plutôt que le
+  // GPS réel : la progression n'est pas détectée automatiquement (l'utilisateur
+  // avance manuellement), donc le point doit refléter l'étape sélectionnée.
+  const [userLat, userLng] = simulatedPosition
 
   const remainingSec = sections.slice(activeStep).reduce((sum, s) => sum + s.duration, 0)
   const isLastStep = activeStep >= sections.length - 1
@@ -161,7 +171,7 @@ function ActiveJourneyContent() {
             </p>
           </div>
           <p className="text-xs text-[#6B7280]">
-            {geo.error ? 'Position approximative' : 'Suivi GPS en direct'}
+            Simulation du trajet · étape {activeStep + 1}/{sections.length}
           </p>
         </div>
         <div className="text-right">
