@@ -9,9 +9,9 @@
     "lint": "eslint src",
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "cy:open": "cypress open",
-    "cy:run": "cypress run",
-    "test:e2e": "cypress run"
+    "cy:open": "node scripts/run-cypress.js open",
+    "cy:run": "node scripts/run-cypress.js run",
+    "test:e2e": "node scripts/run-cypress.js run"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
