@@ -11,3 +11,11 @@ coverage
 **/cypress/videos
 **/cypress/screenshots
 **/cypress/downloads
+
+# next-pwa — genere a chaque build, ne pas versionner
+apps/frontend/public/sw.js
+apps/frontend/public/sw.js.map
+apps/frontend/public/workbox-*.js
+apps/frontend/public/workbox-*.js.map
+apps/frontend/public/worker-*.js
+apps/frontend/public/fallback-*.js
