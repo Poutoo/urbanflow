@@ -44,6 +44,19 @@ const withPWA = require('next-pwa')({
       },
     },
 
+    // CacheFirst — tuiles de carte Leaflet (CartoDB). Des images immuables par
+    // {z}/{x}/{y} : une fois chargées, elles ne changent plus, donc pas besoin
+    // de revalider — sert direct depuis le cache si présent, sinon réseau.
+    {
+      urlPattern: /^https:\/\/[a-z0-9-]+\.basemaps\.cartocdn\.com\/.*/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'map-tiles',
+        expiration: { maxEntries: 500, maxAgeSeconds: 30 * 24 * 60 * 60 },
+        cacheableResponse: { statuses: [0, 200] },
+      },
+    },
+
     ...require('next-pwa/cache'),
   ],
 });
