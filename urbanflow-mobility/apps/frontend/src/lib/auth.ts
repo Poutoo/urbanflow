@@ -72,4 +72,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     error: '/login',
   },
   secret: process.env['NEXTAUTH_SECRET'],
+  // Auth.js v5 rejette les requetes avec UntrustedHost tant que trustHost
+  // n'est pas explicite (implicite seulement en dev ou sur Vercel). Sans ca,
+  // `next start` (build de prod) hors Vercel casse l'authentification.
+  trustHost: true,
 });
