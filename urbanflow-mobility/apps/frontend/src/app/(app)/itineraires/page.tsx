@@ -68,7 +68,7 @@ function ItinerairesContent() {
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null)
   const [starting, setStarting] = useState(false)
 
-  // Valide l'itinéraire : enregistre le CO₂ économisé puis redirige vers le dashboard
+  // Valide l'itinéraire : enregistre le CO₂ économisé puis lance la navigation active
   async function handleStartJourney() {
     if (!selectedRoute || !selectedStrategy) return
     setStarting(true)
@@ -95,7 +95,18 @@ function ItinerairesContent() {
       console.warn('CO₂ record failed:', err)
     }
 
-    router.push('/empreinte')
+    // Le trajet sélectionné est transmis à la page de navigation active via localStorage
+    // (payload trop volumineux pour un query param : géométrie complète du tracé).
+    try {
+      localStorage.setItem(
+        'activeJourney',
+        JSON.stringify({ strategy: selectedStrategy, route: selectedRoute }),
+      )
+    } catch (err) {
+      console.warn('Impossible de sauvegarder le trajet actif:', err)
+    }
+
+    router.push(`/itineraires/actif?strategy=${selectedStrategy}`)
   }
 
   useEffect(() => {

@@ -4,7 +4,6 @@ interface ProfileHeaderProps {
   name: string;
   email: string;
   avatarUrl: string | null;
-  isEcoMobile?: boolean;
 }
 
 function getInitials(name: string): string {
@@ -16,7 +15,7 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-export function ProfileHeader({ name, email, avatarUrl, isEcoMobile = false }: ProfileHeaderProps) {
+export function ProfileHeader({ name, email, avatarUrl }: ProfileHeaderProps) {
   const initials = getInitials(name);
 
   return (
@@ -45,11 +44,6 @@ export function ProfileHeader({ name, email, avatarUrl, isEcoMobile = false }: P
       <div className="flex-1 min-w-0">
         <p className="truncate font-semibold text-[#0F1B2D]">{name}</p>
         <p className="truncate text-sm text-[#6B7280]">{email}</p>
-        {isEcoMobile ? (
-          <span className="mt-1 inline-flex items-center gap-1 rounded-[999px] bg-[#2D7D46]/10 px-2 py-0.5 text-xs font-medium text-[#2D7D46]">
-            <span aria-hidden="true">🌿</span> Éco-mobile
-          </span>
-        ) : null}
       </div>
 
       <ChevronRightIcon className="flex-shrink-0 text-[#6B7280]" />

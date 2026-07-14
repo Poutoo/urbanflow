@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
+import { EcoBadge } from '@/components/profile/EcoBadge';
 import { TransportModes } from '@/components/profile/TransportModes';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -39,7 +40,7 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
   const [priorityMode, setPriorityMode] = useState<PriorityMode>('ecological');
   const [pmrEnabled, setPmrEnabled] = useState(false);
 
-  // Badge Éco-mobile + total CO₂ économisé depuis l'API (décerné à 10 kg)
+  // Badge éco-mobile à 3 paliers + total CO₂ économisé depuis l'API
   const { data: me } = useApiSwr<AuthMeResponse>('/auth/me');
 
   return (
@@ -50,12 +51,9 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
           name={initialUser.name}
           email={initialUser.email}
           avatarUrl={initialUser.avatarUrl}
-          isEcoMobile={me?.profile.ecoMobileBadge ?? false}
         />
         {me && (
-          <p className="px-4 pb-3 text-xs text-[#6B7280]">
-            {me.profile.totalCo2SavedKg.toFixed(1)} kg de CO₂ économisés au total
-          </p>
+          <EcoBadge badgeLevel={me.profile.badgeLevel} totalCo2SavedKg={me.profile.totalCo2SavedKg} />
         )}
       </Card>
 

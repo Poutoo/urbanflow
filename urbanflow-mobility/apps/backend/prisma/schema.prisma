@@ -68,7 +68,7 @@ model UserProfile {
   workAddress     String?
   workCoordinates Json?
   co2Goal         Float    @default(40.0)
-  ecoMobileBadge  Boolean  @default(false)
+  badgeLevel      Int      @default(0)
   totalCo2SavedKg Float    @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

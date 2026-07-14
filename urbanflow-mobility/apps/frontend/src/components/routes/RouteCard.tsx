@@ -8,6 +8,10 @@ export interface RouteSection {
   mode: string
   line?: string
   duration: number
+  /** Arrêt / adresse de départ du segment (fourni par Navitia) */
+  from?: string
+  /** Arrêt / adresse d'arrivée du segment (fourni par Navitia) */
+  to?: string
   coordinates: number[][]
   estimated?: boolean
 }
