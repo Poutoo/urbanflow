@@ -1,0 +1,64 @@
+{
+  "fast": {
+    "id": "fast-co2-1",
+    "duration": 900,
+    "departureTime": "20260714T140000",
+    "arrivalTime": "20260714T141500",
+    "distanceKm": 6.0,
+    "co2Kg": 0.9,
+    "co2SavedKg": 0.0,
+    "isPmrAccessible": true,
+    "sections": [
+      { "type": "public_transport", "mode": "Bus", "line": "38", "duration": 900, "coordinates": [[2.3522, 48.8566], [2.2945, 48.8584]] }
+    ]
+  },
+  "ecological": {
+    "id": "eco-co2-1",
+    "duration": 1400,
+    "departureTime": "20260714T140000",
+    "arrivalTime": "20260714T142320",
+    "distanceKm": 6.0,
+    "co2Kg": 0.1,
+    "co2SavedKg": 6.4,
+    "isPmrAccessible": false,
+    "sections": [
+      { "type": "street_network", "mode": "walking", "duration": 120, "coordinates": [[2.3522, 48.8566], [2.3525, 48.8568]] },
+      { "type": "bss_rent", "mode": "bike", "duration": 1100, "coordinates": [[2.3525, 48.8568], [2.2945, 48.8584]] },
+      { "type": "street_network", "mode": "walking", "duration": 180, "coordinates": [[2.2945, 48.8584], [2.295, 48.859]] }
+    ],
+    "recommendedBikeStation": {
+      "station": {
+        "id": "station-1",
+        "name": "Vélib' Tour Eiffel",
+        "lat": 48.858,
+        "lng": 2.295,
+        "bikesAvailable": 7,
+        "docksAvailable": 12
+      },
+      "distanceM": 85
+    }
+  },
+  "economic": {
+    "id": "economic-co2-1",
+    "duration": 2000,
+    "departureTime": "20260714T140000",
+    "arrivalTime": "20260714T143320",
+    "distanceKm": 6.2,
+    "co2Kg": 0.2,
+    "co2SavedKg": 0.5,
+    "isPmrAccessible": true,
+    "sections": [
+      { "type": "public_transport", "mode": "Métro", "line": "6", "duration": 2000, "coordinates": [[2.3522, 48.8566], [2.2945, 48.8584]] }
+    ]
+  },
+  "nearbyBikeStations": [
+    {
+      "id": "station-1",
+      "name": "Vélib' Tour Eiffel",
+      "lat": 48.858,
+      "lng": 2.295,
+      "bikesAvailable": 7,
+      "docksAvailable": 12
+    }
+  ]
+}

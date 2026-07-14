@@ -1,0 +1,36 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A5F7A"/>
+      <stop offset="100%" stop-color="#0F1B2D"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fond arrondi -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- Epingle de localisation -->
+  <path d="M256 96
+           c-70 0 -122 54 -122 122
+           c0 92 122 214 122 214
+           s122 -122 122 -214
+           c0 -68 -52 -122 -122 -122 z"
+        fill="#FFFFFF"/>
+
+  <!-- Feuille verte a l'interieur de l'epingle (mobilite eco) : forme amande classique + nervure -->
+  <g transform="translate(256 216) rotate(-35)">
+    <path d="M0 -72
+             C 58 -50 66 40 0 72
+             C -66 40 -58 -50 0 -72 Z"
+          fill="#2D7D46"/>
+    <path d="M0 -60 C 8 -20 8 20 0 60" stroke="#FFFFFF" stroke-width="6" fill="none" opacity="0.85" stroke-linecap="round"/>
+  </g>
+
+  <!-- Trace de trajet en pointilles sous l'epingle -->
+  <g stroke="#B85C00" stroke-width="14" stroke-linecap="round" fill="none" opacity="0.9">
+    <line x1="146" y1="452" x2="176" y2="452"/>
+    <line x1="206" y1="452" x2="236" y2="452"/>
+    <line x1="266" y1="452" x2="296" y2="452"/>
+    <line x1="326" y1="452" x2="356" y2="452"/>
+  </g>
+</svg>

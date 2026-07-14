@@ -117,6 +117,7 @@ export function LoginForm() {
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              className="-m-1 p-1"
             >
               <EyeIcon open={showPassword} />
             </button>

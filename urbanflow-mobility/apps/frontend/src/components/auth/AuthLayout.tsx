@@ -24,10 +24,10 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             </svg>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-white/70">
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/90">
               UrbanFlow
             </p>
-            <p className="text-[10px] uppercase tracking-widest text-white/50">MOBILITY</p>
+            <p className="text-[10px] uppercase tracking-widest text-white/80">MOBILITY</p>
           </div>
         </div>
 
