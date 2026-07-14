@@ -163,8 +163,10 @@ export default function CartePage() {
               placeholder="Où voulez-vous aller ?"
               className="w-full bg-transparent text-sm text-[#0F1B2D] placeholder-[#6B7280] outline-none"
               aria-label="Destination"
+              role="combobox"
               aria-autocomplete="list"
               aria-expanded={showDropdown}
+              aria-controls="destination-suggestions"
               autoComplete="off"
             />
             {query && (
@@ -195,6 +197,7 @@ export default function CartePage() {
         {showDropdown && (
           <div
             ref={dropdownRef}
+            id="destination-suggestions"
             role="listbox"
             className="mt-1.5 overflow-hidden rounded-2xl bg-white shadow-lg"
           >
