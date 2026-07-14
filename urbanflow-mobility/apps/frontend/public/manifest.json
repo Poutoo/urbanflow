@@ -23,5 +23,21 @@
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
     { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/carte-mobile.png",
+      "sizes": "390x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Carte et recherche d'itinéraire — vue mobile"
+    },
+    {
+      "src": "/screenshots/carte-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Carte et recherche d'itinéraire — vue large"
+    }
   ]
 }
