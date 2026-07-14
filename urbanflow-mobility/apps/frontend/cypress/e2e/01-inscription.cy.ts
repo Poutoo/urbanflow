@@ -7,9 +7,9 @@ describe('Inscription', () => {
     cy.visit('/register')
     cy.contains('h2', 'Créer un compte').should('be.visible')
 
-    cy.get('#nom-complet').type('Camille Test')
-    cy.get('#adresse-e-mail').type(email)
-    cy.get('#mot-de-passe').type('MotDePasse123!')
+    cy.get('input[name="name"]').type('Camille Test')
+    cy.get('input[name="email"]').type(email)
+    cy.get('input[name="password"]').type('MotDePasse123!')
 
     cy.intercept('POST', '**/api/auth/register').as('register')
     cy.contains('button', 'Créer mon compte').click()
@@ -23,9 +23,9 @@ describe('Inscription', () => {
     cy.intercept('POST', '**/api/auth/register').as('register')
 
     cy.visit('/register')
-    cy.get('#nom-complet').type('A')
-    cy.get('#adresse-e-mail').type('pas-un-email')
-    cy.get('#mot-de-passe').type('court')
+    cy.get('input[name="name"]').type('A')
+    cy.get('input[name="email"]').type('pas-un-email')
+    cy.get('input[name="password"]').type('court')
     cy.contains('button', 'Créer mon compte').click()
 
     cy.contains('Le nom doit contenir au moins 2 caractères').should('be.visible')
@@ -42,9 +42,9 @@ describe('Inscription', () => {
     cy.apiRegister(email, 'MotDePasse123!', 'Premier Compte').its('status').should('eq', 201)
 
     cy.visit('/register')
-    cy.get('#nom-complet').type('Deuxième Compte')
-    cy.get('#adresse-e-mail').type(email)
-    cy.get('#mot-de-passe').type('AutreMotDePasse123!')
+    cy.get('input[name="name"]').type('Deuxième Compte')
+    cy.get('input[name="email"]').type(email)
+    cy.get('input[name="password"]').type('AutreMotDePasse123!')
 
     cy.intercept('POST', '**/api/auth/register').as('register')
     cy.contains('button', 'Créer mon compte').click()

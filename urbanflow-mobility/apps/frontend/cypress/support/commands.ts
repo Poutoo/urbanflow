@@ -27,8 +27,8 @@ Cypress.Commands.add('apiRegister', (email: string, password: string, name = 'Ut
 
 Cypress.Commands.add('uiLogin', (email: string, password: string) => {
   cy.visit('/login')
-  cy.get('#adresse-e-mail').type(email)
-  cy.get('#mot-de-passe').type(password)
+  cy.get('input[name="email"]').type(email)
+  cy.get('input[name="password"]').type(password)
   cy.contains('button', 'Se connecter').click()
   cy.location('pathname', { timeout: 10000 }).should('eq', '/carte')
 })
