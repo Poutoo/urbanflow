@@ -105,7 +105,7 @@ export class AuthService {
         pmrEnabled: user.profile?.pmrEnabled ?? false,
         co2Goal: user.profile?.co2Goal ?? 40,
         totalCo2SavedKg: user.profile?.totalCo2SavedKg ?? 0,
-        ecoMobileBadge: user.profile?.ecoMobileBadge ?? false,
+        badgeLevel: user.profile?.badgeLevel ?? 0,
       },
     };
   }

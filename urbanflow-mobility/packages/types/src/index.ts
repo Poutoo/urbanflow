@@ -38,7 +38,8 @@ export interface AuthMeProfile {
   pmrEnabled: boolean;
   co2Goal: number;
   totalCo2SavedKg: number;
-  ecoMobileBadge: boolean;
+  /** Palier du badge éco-mobile : 0 = aucun, 1 = Éco-débutant, 2 = Éco-mobile, 3 = Éco-héros */
+  badgeLevel: number;
 }
 
 export interface AuthMeResponse extends AuthUser {

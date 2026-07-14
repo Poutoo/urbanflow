@@ -3,8 +3,20 @@ import { PrismaService } from '../prisma/prisma.service'
 import { RecordJourneyDto } from './dto/record-journey.dto'
 import { WeeklyStats, MonthlyProgress, ModeBreakdown } from './dto/co2-stats.dto'
 
-/** Seuil de CO₂ économisé (kg) au-delà duquel le badge Éco-mobile est décerné */
-export const ECO_MOBILE_THRESHOLD_KG = 10
+/** Seuils de CO₂ économisé (kg) cumulé pour chaque palier du badge éco-mobile */
+export const BADGE_THRESHOLDS_KG: Record<1 | 2 | 3, number> = {
+  1: 5,
+  2: 25,
+  3: 100,
+}
+
+/** Calcule le palier de badge (0 = aucun, 1 à 3) atteint pour un CO₂ cumulé donné */
+export function computeBadgeLevel(totalCo2SavedKg: number): number {
+  if (totalCo2SavedKg >= BADGE_THRESHOLDS_KG[3]) return 3
+  if (totalCo2SavedKg >= BADGE_THRESHOLDS_KG[2]) return 2
+  if (totalCo2SavedKg >= BADGE_THRESHOLDS_KG[1]) return 1
+  return 0
+}
 
 const DAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'] as const
 
@@ -33,7 +45,7 @@ export class Co2DashboardService {
 
   /**
    * Enregistre un trajet validé, incrémente le compteur cumulé du profil
-   * et décerne le badge Éco-mobile si le seuil est atteint.
+   * et met à jour le palier du badge éco-mobile en conséquence.
    * Transaction : si une opération échoue, tout est annulé.
    */
   async recordJourney(userId: string, dto: RecordJourneyDto): Promise<void> {
@@ -55,10 +67,11 @@ export class Co2DashboardService {
         data: { totalCo2SavedKg: { increment: dto.co2SavedKg } },
       })
 
-      if (!profile.ecoMobileBadge && profile.totalCo2SavedKg >= ECO_MOBILE_THRESHOLD_KG) {
+      const newBadgeLevel = computeBadgeLevel(profile.totalCo2SavedKg)
+      if (newBadgeLevel !== profile.badgeLevel) {
         await tx.userProfile.update({
           where: { userId },
-          data: { ecoMobileBadge: true },
+          data: { badgeLevel: newBadgeLevel },
         })
       }
     })

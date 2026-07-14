@@ -1,6 +1,7 @@
 'use client'
 import { Icon } from '@iconify/react'
 import type { MonthlyProgress } from '@urbanflow/types'
+import { ProgressBar } from '@/components/ui/ProgressBar'
 
 /**
  * Barre de progression vers l'objectif mensuel de CO₂ économisé.
@@ -20,19 +21,11 @@ export function MonthlyGoal({ savedKg, goalKg, progressPercent, remainingKg }: M
       </div>
 
       <div className="relative">
-        <div
-          className="h-2 overflow-hidden rounded-full bg-gray-100"
-          role="progressbar"
-          aria-valuenow={progressPercent}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Progression vers l'objectif mensuel de CO₂ économisé"
-        >
-          <div
-            className="h-full rounded-full bg-[#B85C00] transition-all duration-500"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+        <ProgressBar
+          percent={progressPercent}
+          color="#B85C00"
+          ariaLabel="Progression vers l'objectif mensuel de CO₂ économisé"
+        />
 
         {/* Icône cible — centrée sur la barre, indépendamment de la hauteur du titre/texte */}
         <span

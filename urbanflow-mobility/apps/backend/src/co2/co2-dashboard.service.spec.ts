@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing'
-import { Co2DashboardService, ECO_MOBILE_THRESHOLD_KG } from './co2-dashboard.service'
+import { Co2DashboardService, computeBadgeLevel } from './co2-dashboard.service'
 import { PrismaService } from '../prisma/prisma.service'
 import { RecordJourneyDto } from './dto/record-journey.dto'
 
@@ -71,7 +71,7 @@ describe('Co2DashboardService', () => {
 
   describe('recordJourney', () => {
     it('crée un record en BDD dans une transaction', async () => {
-      tx.userProfile.update.mockResolvedValue({ ecoMobileBadge: false, totalCo2SavedKg: 2 })
+      tx.userProfile.update.mockResolvedValue({ badgeLevel: 0, totalCo2SavedKg: 2 })
 
       await service.recordJourney(USER_ID, makeDto())
 
@@ -84,7 +84,7 @@ describe('Co2DashboardService', () => {
     })
 
     it('incrémente totalCo2SavedKg sur le profil', async () => {
-      tx.userProfile.update.mockResolvedValue({ ecoMobileBadge: false, totalCo2SavedKg: 5 })
+      tx.userProfile.update.mockResolvedValue({ badgeLevel: 0, totalCo2SavedKg: 5 })
 
       await service.recordJourney(USER_ID, makeDto({ co2SavedKg: 3 }))
 
@@ -96,36 +96,61 @@ describe('Co2DashboardService', () => {
       )
     })
 
-    it('décerne le badge Éco-mobile quand totalCo2SavedKg >= 10', async () => {
-      tx.userProfile.update.mockResolvedValue({
-        ecoMobileBadge: false,
-        totalCo2SavedKg: ECO_MOBILE_THRESHOLD_KG,
-      })
+    it('passe au palier 1 (Éco-débutant) quand totalCo2SavedKg atteint 5', async () => {
+      tx.userProfile.update.mockResolvedValue({ badgeLevel: 0, totalCo2SavedKg: 5 })
 
       await service.recordJourney(USER_ID, makeDto())
 
-      // 2 updates : incrément puis attribution du badge
+      // 2 updates : incrément puis mise à jour du palier
       expect(tx.userProfile.update).toHaveBeenCalledTimes(2)
       expect(tx.userProfile.update).toHaveBeenLastCalledWith({
         where: { userId: USER_ID },
-        data: { ecoMobileBadge: true },
+        data: { badgeLevel: 1 },
       })
     })
 
-    it('ne décerne pas le badge si totalCo2SavedKg < 10', async () => {
-      tx.userProfile.update.mockResolvedValue({ ecoMobileBadge: false, totalCo2SavedKg: 9.9 })
+    it('passe directement au palier 3 (Éco-héros) si le seuil est franchi en une fois', async () => {
+      tx.userProfile.update.mockResolvedValue({ badgeLevel: 0, totalCo2SavedKg: 120 })
+
+      await service.recordJourney(USER_ID, makeDto())
+
+      expect(tx.userProfile.update).toHaveBeenLastCalledWith({
+        where: { userId: USER_ID },
+        data: { badgeLevel: 3 },
+      })
+    })
+
+    it('ne met pas à jour le palier si totalCo2SavedKg < 5', async () => {
+      tx.userProfile.update.mockResolvedValue({ badgeLevel: 0, totalCo2SavedKg: 4.9 })
 
       await service.recordJourney(USER_ID, makeDto())
 
       expect(tx.userProfile.update).toHaveBeenCalledTimes(1)
     })
 
-    it('ne décerne pas le badge une deuxième fois', async () => {
-      tx.userProfile.update.mockResolvedValue({ ecoMobileBadge: true, totalCo2SavedKg: 50 })
+    it('ne met pas à jour le palier si celui-ci n’a pas changé', async () => {
+      tx.userProfile.update.mockResolvedValue({ badgeLevel: 2, totalCo2SavedKg: 50 })
 
       await service.recordJourney(USER_ID, makeDto())
 
       expect(tx.userProfile.update).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  // ─── computeBadgeLevel ──────────────────────────────────────────────────────
+
+  describe('computeBadgeLevel', () => {
+    it.each([
+      [0, 0],
+      [4.99, 0],
+      [5, 1],
+      [24.99, 1],
+      [25, 2],
+      [99.99, 2],
+      [100, 3],
+      [150, 3],
+    ])('%s kg économisés → palier %i', (totalCo2SavedKg, expectedLevel) => {
+      expect(computeBadgeLevel(totalCo2SavedKg)).toBe(expectedLevel)
     })
   })
 
