@@ -1,7 +1,18 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import { SessionProvider } from 'next-auth/react';
 import { ServiceWorkerRegister } from '@/components/pwa/ServiceWorkerRegister';
 import './globals.css';
+
+// Auto-hébergée par Next.js (next/font) plutôt qu'un @import Google Fonts :
+// évite une requête externe bloquant le rendu (~850-2200ms mesurés en
+// Lighthouse sur /carte et /profil).
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-inter',
+});
 
 export const metadata: Metadata = {
   title: 'UrbanFlow Mobility',
@@ -30,7 +41,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={inter.variable}>
       <body>
         <ServiceWorkerRegister />
         <SessionProvider>{children}</SessionProvider>
