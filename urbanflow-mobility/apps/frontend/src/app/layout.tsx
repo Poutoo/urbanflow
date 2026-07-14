@@ -42,6 +42,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={inter.variable}>
+      <head>
+        {/* Tuiles Leaflet (carte) — accélère la connexion dès que le tracé
+            démarre, une fois la géolocalisation résolue côté client. */}
+        <link rel="preconnect" href="https://a.basemaps.cartocdn.com" />
+        <link rel="preconnect" href="https://b.basemaps.cartocdn.com" />
+      </head>
       <body>
         <ServiceWorkerRegister />
         <SessionProvider>{children}</SessionProvider>
