@@ -26,6 +26,24 @@ const withPWA = require('next-pwa')({
       },
     },
 
+    // NetworkFirst — données de trajet/API (GET /co2/*, /auth/me, /gbfs/*,
+    // /places...). Le backend sert déjà ces réponses via son propre cache
+    // Redis quand il est en ligne ; ce cache Workbox ne fait que rejouer la
+    // DERNIÈRE réponse réussie côté navigateur si le réseau est indisponible
+    // (fallback offline). Ne s'applique qu'aux requêtes GET — les écritures
+    // (login, co2/record, routes/search en POST) ne sont pas mises en cache,
+    // ce qui est le comportement voulu pour des mutations.
+    {
+      urlPattern: ({ url }) => url.pathname.includes('/api/'),
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'api-data',
+        networkTimeoutSeconds: 5,
+        expiration: { maxEntries: 100, maxAgeSeconds: 24 * 60 * 60 },
+        cacheableResponse: { statuses: [0, 200] },
+      },
+    },
+
     ...require('next-pwa/cache'),
   ],
 });
