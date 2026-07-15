@@ -1,0 +1,18 @@
+**/node_modules
+**/dist
+**/.next
+**/coverage
+**/.turbo
+.git
+**/*.log
+**/cypress/videos
+**/cypress/screenshots
+**/cypress/downloads
+
+# Ne jamais faire entrer de secrets dans le contexte de build (une image intermédiaire
+# copiée par COPY . . resterait dans le cache/les layers même si le stage final ne les
+# recopie pas explicitement)
+**/.env
+**/.env.local
+**/.env.*.local
+**/.env.production
