@@ -4,6 +4,11 @@ const withPWA = require('next-pwa')({
   skipWaiting: true,
   // Le SW interfère avec le hot-reload de webpack en dev — actif seulement en prod.
   disable: process.env.NODE_ENV === 'development',
+  // Ces manifests internes à Next.js (App Router) ne sont pas servis publiquement
+  // sous /_next/ — next-pwa les ajoute pourtant à la précache auto-générée, ce qui
+  // produit un 404 et fait échouer l'installation du service worker
+  // (bad-precaching-response). On les exclut explicitement.
+  buildExcludes: [/middleware-manifest\.json$/, /app-build-manifest\.json$/, /_buildManifest\.js$/, /_ssgManifest\.js$/],
   runtimeCaching: [
     // StaleWhileRevalidate — assets statiques (chunks JS/CSS Next.js + polices
     // Google Fonts) : sert immédiatement depuis le cache puis revalide en tâche
