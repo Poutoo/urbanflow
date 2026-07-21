@@ -1,4 +1,8 @@
+'use client';
+
 import type { TransportMode } from '@urbanflow/types';
+import { useIsDarkMode } from '@/hooks/useIsDarkMode';
+import { getContentColor } from '@/lib/darkColors';
 
 const modeConfig: Record<TransportMode, { label: string; color: string }> = {
   velo: { label: 'Vélo', color: '#16A34A' },
@@ -18,10 +22,16 @@ interface BadgeProps {
 
 export function Badge({ mode, selected = false, onClick }: BadgeProps) {
   const config = modeConfig[mode];
+  const isDark = useIsDarkMode();
+  const color = getContentColor(config.color, isDark);
 
   const style = selected
-    ? { backgroundColor: `${config.color}20`, borderColor: config.color, color: config.color }
-    : { backgroundColor: '#F7F9FC', borderColor: '#E5E7EB', color: '#6B7280' };
+    ? { backgroundColor: `${color}20`, borderColor: color, color }
+    : {
+        backgroundColor: 'rgb(var(--color-bg))',
+        borderColor: 'rgb(var(--color-divider))',
+        color: 'rgb(var(--color-muted))',
+      };
 
   return (
     <button

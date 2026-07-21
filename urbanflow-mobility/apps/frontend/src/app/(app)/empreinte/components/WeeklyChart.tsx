@@ -1,5 +1,7 @@
 'use client'
 import type { WeeklyDay } from '@urbanflow/types'
+import { useIsDarkMode } from '@/hooks/useIsDarkMode'
+import { getContentColor, hexToRgba } from '@/lib/darkColors'
 
 interface Props {
   days: WeeklyDay[]
@@ -11,8 +13,11 @@ interface Props {
  * Le jour avec la plus grande valeur est mis en avant en vert foncé.
  */
 export function WeeklyChart({ days }: Props) {
+  const isDark = useIsDarkMode()
   const max = Math.max(...days.map((d) => d.co2SavedKg), 1)
   const bestValue = Math.max(...days.map((d) => d.co2SavedKg))
+  const highlightColor = getContentColor('#2D7D46', isDark)
+  const trackColor = isDark ? hexToRgba(highlightColor, 0.16) : '#D4EFE1'
 
   return (
     <div
@@ -26,16 +31,19 @@ export function WeeklyChart({ days }: Props) {
 
         return (
           <div key={`${day.date}-${i}`} className="flex flex-1 flex-col items-center gap-1">
-            <span className="h-4 text-xs text-[#6B7280]">
+            <span className="h-4 text-xs text-[#6B7280] dark:text-muted">
               {day.co2SavedKg > 0 ? day.co2SavedKg.toFixed(1) : ''}
             </span>
             <div className="flex w-full items-end" style={{ height: '80px' }}>
               <div
-                className={`w-full rounded-t-lg transition-all ${isHighlight ? 'bg-[#2D7D46]' : 'bg-[#D4EFE1]'}`}
-                style={{ height: `${Math.max(heightPct, 4)}%` }}
+                className="w-full rounded-t-lg transition-all"
+                style={{
+                  height: `${Math.max(heightPct, 4)}%`,
+                  backgroundColor: isHighlight ? highlightColor : trackColor,
+                }}
               />
             </div>
-            <span className="text-xs text-[#6B7280]">{day.label}</span>
+            <span className="text-xs text-[#6B7280] dark:text-muted">{day.label}</span>
           </div>
         )
       })}

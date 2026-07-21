@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { Icon } from '@iconify/react';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 
@@ -15,13 +16,6 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
-
-const MailIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="2" y="4" width="20" height="16" rx="2" />
-    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-  </svg>
-);
 
 interface EyeIconProps {
   open: boolean;
@@ -41,16 +35,6 @@ const EyeIcon = ({ open }: EyeIconProps) =>
       <line x1="2" x2="22" y1="2" y2="22" />
     </svg>
   );
-
-interface LightningIconProps {
-  className?: string;
-}
-
-const LightningIcon = ({ className = '' }: LightningIconProps) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-  </svg>
-);
 
 export function LoginForm() {
   const router = useRouter();
@@ -82,7 +66,7 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
       {serverError ? (
-        <div role="alert" className="rounded-[8px] bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="rounded-[8px] bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-400">
           {serverError}
         </div>
       ) : null}
@@ -92,17 +76,17 @@ export function LoginForm() {
         type="email"
         placeholder="vous@exemple.fr"
         autoComplete="email"
-        icon={<MailIcon />}
+        icon={<Icon icon="ph:envelope-simple" width={16} />}
         error={errors.email?.message}
         {...register('email')}
       />
 
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-[#0F1B2D]">Mot de passe</span>
+          <span className="text-sm font-medium text-[#0F1B2D] dark:text-text-main">Mot de passe</span>
           <a
             href="/forgot-password"
-            className="text-sm font-medium text-[#1A5F7A] underline-offset-2 hover:underline"
+            className="text-sm font-medium text-[#1A5F7A] underline-offset-2 hover:underline dark:text-primary-content"
           >
             Oublié ?
           </a>
@@ -111,7 +95,7 @@ export function LoginForm() {
           type={showPassword ? 'text' : 'password'}
           placeholder="••••••••"
           autoComplete="current-password"
-          icon={<LightningIcon className="text-[#1A5F7A]" />}
+          icon={<Icon icon="ph:lock-simple" width={16} className="text-[#1A5F7A] dark:text-primary-content" />}
           rightIcon={
             <button
               type="button"

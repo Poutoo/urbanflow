@@ -111,3 +111,11 @@ a {
     display: none;
   }
 }
+
+/* Leaflet — les popups gardent un fond blanc codé en dur par leaflet.css :
+   on les fait suivre le thème de l'app en mode sombre. */
+.dark .leaflet-popup-content-wrapper,
+.dark .leaflet-popup-tip {
+  background-color: rgb(var(--color-surface));
+  color: rgb(var(--color-text));
+}
