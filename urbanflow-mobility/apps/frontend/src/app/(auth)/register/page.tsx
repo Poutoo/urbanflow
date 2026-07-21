@@ -48,10 +48,10 @@ export default function RegisterPage() {
 
   return (
     <AuthLayout>
-      <h2 className="text-xl font-bold text-[#0F1B2D]">Créer un compte</h2>
+      <h2 className="text-xl font-bold text-[#0F1B2D] dark:text-text-main">Créer un compte</h2>
 
       {serverError ? (
-        <div role="alert" className="rounded-[8px] bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="rounded-[8px] bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-400">
           {serverError}
         </div>
       ) : null}
@@ -86,11 +86,11 @@ export default function RegisterPage() {
         </Button>
       </form>
 
-      <p className="text-center text-sm text-[#6B7280]">
+      <p className="text-center text-sm text-[#6B7280] dark:text-muted">
         Déjà un compte ?{' '}
         <Link
           href="/login"
-          className="font-semibold text-[#1A5F7A] underline-offset-2 hover:underline"
+          className="font-semibold text-[#1A5F7A] underline-offset-2 hover:underline dark:text-primary-content"
         >
           Se connecter
         </Link>

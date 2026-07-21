@@ -82,7 +82,7 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
       {serverError ? (
-        <div role="alert" className="rounded-[8px] bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="rounded-[8px] bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-400">
           {serverError}
         </div>
       ) : null}
@@ -99,10 +99,10 @@ export function LoginForm() {
 
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-[#0F1B2D]">Mot de passe</span>
+          <span className="text-sm font-medium text-[#0F1B2D] dark:text-text-main">Mot de passe</span>
           <a
             href="/forgot-password"
-            className="text-sm font-medium text-[#1A5F7A] underline-offset-2 hover:underline"
+            className="text-sm font-medium text-[#1A5F7A] underline-offset-2 hover:underline dark:text-primary-content"
           >
             Oublié ?
           </a>
@@ -111,7 +111,7 @@ export function LoginForm() {
           type={showPassword ? 'text' : 'password'}
           placeholder="••••••••"
           autoComplete="current-password"
-          icon={<LightningIcon className="text-[#1A5F7A]" />}
+          icon={<LightningIcon className="text-[#1A5F7A] dark:text-primary-content" />}
           rightIcon={
             <button
               type="button"
