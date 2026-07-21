@@ -1,0 +1,27 @@
+// deploy/security/50unattended-upgrades
+// À copier vers /etc/apt/apt.conf.d/50unattended-upgrades sur le VPS, APRÈS avoir
+// sauvegardé l'original (voir procédure dans README.md).
+//
+// Sécurité uniquement — volontairement PAS de "${distro_id}:${distro_codename}" (pocket
+// de sortie de version, sans le suffixe -security) ni -updates/-backports : on ne veut
+// que les correctifs de sécurité, jamais une mise à jour majeure qui pourrait casser
+// Docker/Docker Compose installés depuis le dépôt APT tiers de Docker (download.docker.com,
+// qui n'est de toute façon dans aucune de ces origines Ubuntu — il n'est donc jamais
+// concerné par ce fichier, sécurité ou pas).
+Unattended-Upgrade::Allowed-Origins {
+        "${distro_id}:${distro_codename}-security";
+        "${distro_id}ESMApps:${distro_codename}-apps-security";
+        "${distro_id}ESM:${distro_codename}-infra-security";
+};
+
+// Ne jamais redémarrer automatiquement : un reboot surprise du VPS, même si les
+// conteneurs remontent seuls (restart: unless-stopped), doit rester une action
+// déclenchée consciemment, surtout une fois l'app ouverte à des testeurs externes.
+Unattended-Upgrade::Automatic-Reboot "false";
+Unattended-Upgrade::Automatic-Reboot-WithUsers "false";
+
+// Nettoyage des dépendances devenues inutiles après une mise à jour de sécurité.
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+
+// Log détaillé pour pouvoir auditer ce qui a été appliqué automatiquement.
+Unattended-Upgrade::Verbose "true";
