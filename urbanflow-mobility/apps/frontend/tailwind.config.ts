@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
+  darkMode: 'class',
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -9,13 +10,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: '#1A5F7A',
-        secondary: '#2D7D46',
-        accent: '#B85C00',
-        bg: '#F7F9FC',
-        surface: '#FFFFFF',
-        muted: '#6B7280',
-        'text-main': '#0F1B2D',
+        // Tokens theme-aware : valeurs RGB définies dans globals.css (:root / .dark),
+        // le format rgb(var(...) / <alpha-value>) préserve le support des modificateurs
+        // d'opacité Tailwind (bg-primary/10, border-primary-content/30, etc.)
+        primary: 'rgb(var(--color-primary) / <alpha-value>)',
+        'primary-content': 'rgb(var(--color-primary-content) / <alpha-value>)',
+        secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
+        'secondary-content': 'rgb(var(--color-secondary-content) / <alpha-value>)',
+        accent: 'rgb(var(--color-accent) / <alpha-value>)',
+        'accent-content': 'rgb(var(--color-accent-content) / <alpha-value>)',
+        bg: 'rgb(var(--color-bg) / <alpha-value>)',
+        surface: 'rgb(var(--color-surface) / <alpha-value>)',
+        muted: 'rgb(var(--color-muted) / <alpha-value>)',
+        'text-main': 'rgb(var(--color-text) / <alpha-value>)',
+        divider: 'rgb(var(--color-divider) / <alpha-value>)',
         transport: {
           velo: '#16A34A',
           bus: '#1D4ED8',

@@ -5,14 +5,26 @@
 @tailwind utilities;
 
 :root {
-  /* Design System — UrbanFlow */
-  --color-primary: #1a5f7a;
-  --color-secondary: #2d7d46;
-  --color-accent: #b85c00;
-  --color-bg: #f7f9fc;
-  --color-text: #0f1b2d;
-  --color-surface: #ffffff;
-  --color-muted: #6b7280;
+  /* Design System — UrbanFlow (clair)
+     Triplets RGB (pas de #hex) pour permettre rgb(var(...) / <alpha-value>)
+     dans tailwind.config.ts. En clair, les tokens "-content" valent les mêmes
+     couleurs que leur token de base : les couleurs de marque servent à la fois
+     de fond de bouton (texte blanc dessus) et de texte direct sur le fond clair,
+     et les deux usages passent déjà l'AA avec ces valeurs. En sombre, ces deux
+     usages divergent (voir bloc .dark ci-dessous) — vérifié en Phase 1 avec un
+     calcul de ratio de contraste (WCAG relative luminance), revalidé en Phase 4.
+  */
+  --color-primary: 26 95 122; /* #1A5F7A */
+  --color-primary-content: 26 95 122;
+  --color-secondary: 45 125 70; /* #2D7D46 */
+  --color-secondary-content: 45 125 70;
+  --color-accent: 184 92 0; /* #B85C00 */
+  --color-accent-content: 184 92 0;
+  --color-bg: 247 249 252; /* #F7F9FC */
+  --color-text: 15 27 45; /* #0F1B2D */
+  --color-surface: 255 255 255; /* #FFFFFF */
+  --color-muted: 107 114 128; /* #6B7280 */
+  --color-divider: 229 231 235; /* #E5E7EB */
 
   /* Modes de transport */
   --color-velo: #16a34a;
@@ -38,6 +50,32 @@
   --radius-badge: 999px;
 }
 
+/* Design System — UrbanFlow (sombre)
+   Tokens choisis et vérifiés indépendamment (pas un filter: invert() ni un
+   assombrissement automatique) — ratios calculés avec la formule de luminance
+   relative WCAG, revérifiés en Phase 4 :
+     texte #EAF1F8 sur fond #0B1622 → 16.00:1 (AAA)
+     muted #9FB0C3 sur fond #0B1622 → 8.22:1 (AAA)
+     primary-content #5CB8DE sur fond #0B1622 → 8.13:1 (AAA)
+     secondary-content #4CC383 sur fond #0B1622 → 8.19:1 (AAA)
+     accent-content #E0913C sur fond #0B1622 → 7.19:1 (AAA)
+   --color-primary/secondary/accent restent inchangés : ce sont les fonds
+   pleins (boutons, badges) avec texte blanc dessus, dont le contraste ne
+   dépend pas du fond de page (déjà 7.09:1 / 5.08:1 / 4.60:1 en clair comme en
+   sombre). Seuls les tokens "-content" (texte/bordure/anneau de focus posés
+   directement sur le fond de page) ont besoin d'une variante éclaircie.
+*/
+.dark {
+  --color-primary-content: 92 184 222; /* #5CB8DE */
+  --color-secondary-content: 76 195 131; /* #4CC383 */
+  --color-accent-content: 224 145 60; /* #E0913C */
+  --color-bg: 11 22 34; /* #0B1622 */
+  --color-text: 234 241 248; /* #EAF1F8 */
+  --color-surface: 23 35 47; /* #17232F */
+  --color-muted: 159 176 195; /* #9FB0C3 */
+  --color-divider: 38 54 70; /* #263646 */
+}
+
 * {
   box-sizing: border-box;
   padding: 0;
@@ -50,8 +88,8 @@ body {
   overflow-x: hidden;
   font-family: var(--font-inter), system-ui, sans-serif;
   font-size: 16px;
-  background-color: var(--color-bg);
-  color: var(--color-text);
+  background-color: rgb(var(--color-bg));
+  color: rgb(var(--color-text));
 }
 
 /* PWA — touch friendly */
@@ -60,9 +98,10 @@ a {
   touch-action: manipulation;
 }
 
-/* Focus visible pour WCAG 2.1 AA */
+/* Focus visible pour WCAG 2.1 AA — utilise le token "-content" (posé
+   directement sur le fond de page) plutôt que --color-primary (fond plein) */
 :focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid rgb(var(--color-primary-content));
   outline-offset: 2px;
 }
 
