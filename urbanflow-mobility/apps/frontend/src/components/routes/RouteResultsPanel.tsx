@@ -37,11 +37,11 @@ export function RouteResultsPanel({ results, selectedStrategy, onSelect }: Props
     <div className="flex h-full flex-col">
       {/* Toolbar */}
       <div className="flex shrink-0 items-center justify-between px-4 py-3">
-        <h2 className="text-sm font-bold text-[#0F1B2D]">Itinéraires disponibles</h2>
+        <h2 className="text-sm font-bold text-[#0F1B2D] dark:text-text-main">Itinéraires disponibles</h2>
         <button
           onClick={() => setPmrOnly((v) => !v)}
           className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-            pmrOnly ? 'bg-blue-600 text-white' : 'bg-[#E5E7EB] text-[#6B7280]'
+            pmrOnly ? 'bg-blue-600 text-white' : 'bg-[#E5E7EB] text-[#6B7280] dark:bg-divider dark:text-muted'
           }`}
           aria-pressed={pmrOnly}
         >
@@ -56,10 +56,10 @@ export function RouteResultsPanel({ results, selectedStrategy, onSelect }: Props
             <span className="text-3xl" aria-hidden="true">
               ♿
             </span>
-            <p className="text-sm text-[#6B7280]">Aucun itinéraire accessible PMR disponible.</p>
+            <p className="text-sm text-[#6B7280] dark:text-muted">Aucun itinéraire accessible PMR disponible.</p>
             <button
               onClick={() => setPmrOnly(false)}
-              className="mt-1 text-xs font-semibold text-[#1A5F7A] underline"
+              className="mt-1 text-xs font-semibold text-[#1A5F7A] underline dark:text-primary-content"
             >
               Voir tous les itinéraires
             </button>

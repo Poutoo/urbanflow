@@ -8,7 +8,7 @@ import type { RouteResult, RouteSection, Strategy } from '@/components/routes/Ro
 
 const MapView = dynamic(() => import('@/components/map/MapView').then((m) => m.MapView), {
   ssr: false,
-  loading: () => <div className="h-full w-full animate-pulse bg-gray-200" />,
+  loading: () => <div className="h-full w-full animate-pulse bg-gray-200 dark:bg-divider" />,
 })
 
 const API_URL = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001/api'
@@ -197,10 +197,10 @@ function ItinerairesContent() {
   return (
     <div className="flex h-[calc(100vh-64px)] flex-col">
       {/* Header */}
-      <div className="flex shrink-0 items-center gap-3 border-b border-[#E5E7EB] bg-white px-4 py-3">
+      <div className="flex shrink-0 items-center gap-3 border-b border-[#E5E7EB] bg-white px-4 py-3 dark:border-divider dark:bg-surface">
         <a
           href="/carte"
-          className="shrink-0 rounded-full p-1 text-[#6B7280] transition hover:bg-gray-100"
+          className="shrink-0 rounded-full p-1 text-[#6B7280] transition hover:bg-gray-100 dark:text-muted dark:hover:bg-divider/40"
           aria-label="Retour à la carte"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -208,13 +208,13 @@ function ItinerairesContent() {
           </svg>
         </a>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-[#0F1B2D]">
+          <p className="truncate text-sm font-semibold text-[#0F1B2D] dark:text-text-main">
             {toAddress || 'Itinéraire'}
           </p>
-          <p className="text-xs text-[#6B7280]">Depuis votre position</p>
+          <p className="text-xs text-[#6B7280] dark:text-muted">Depuis votre position</p>
         </div>
         {loading && (
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#1A5F7A] border-t-transparent" />
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#1A5F7A] border-t-transparent dark:border-primary-content" />
         )}
       </div>
 
@@ -230,18 +230,18 @@ function ItinerairesContent() {
       </div>
 
       {/* Results panel — flexible */}
-      <div className="flex flex-1 flex-col overflow-hidden bg-[#F7F9FC]">
+      <div className="flex flex-1 flex-col overflow-hidden bg-[#F7F9FC] dark:bg-bg">
         {loading && (
           <div className="flex h-full flex-col items-center justify-center gap-3">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1A5F7A] border-t-transparent" />
-            <p className="text-sm text-[#6B7280]">Calcul des itinéraires en cours...</p>
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#1A5F7A] border-t-transparent dark:border-primary-content" />
+            <p className="text-sm text-[#6B7280] dark:text-muted">Calcul des itinéraires en cours...</p>
           </div>
         )}
 
         {!loading && error && (
           <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
             <span className="text-4xl" aria-hidden="true">🗺️</span>
-            <p className="text-sm font-medium text-[#0F1B2D]">{error}</p>
+            <p className="text-sm font-medium text-[#0F1B2D] dark:text-text-main">{error}</p>
             <a
               href="/carte"
               className="rounded-full bg-[#1A5F7A] px-6 py-2.5 text-sm font-semibold text-white"
@@ -254,7 +254,7 @@ function ItinerairesContent() {
         {!loading && !error && !toAddress && (
           <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
             <span className="text-4xl" aria-hidden="true">🔍</span>
-            <p className="text-sm text-[#6B7280]">
+            <p className="text-sm text-[#6B7280] dark:text-muted">
               Entrez une destination depuis la carte pour lancer la recherche.
             </p>
             <a
@@ -280,7 +280,7 @@ function ItinerairesContent() {
             </div>
 
             {/* Bouton Démarrer fixé en bas */}
-            <div className="shrink-0 border-t border-[#E5E7EB] bg-white px-4 py-3">
+            <div className="shrink-0 border-t border-[#E5E7EB] bg-white px-4 py-3 dark:border-divider dark:bg-surface">
               <button
                 disabled={!selectedRoute || starting}
                 className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-white transition-opacity disabled:opacity-40"
@@ -302,7 +302,7 @@ function ItinerairesContent() {
 
 export default function ItinerairesPage() {
   return (
-    <Suspense fallback={<div className="h-[calc(100vh-64px)] animate-pulse bg-gray-100" />}>
+    <Suspense fallback={<div className="h-[calc(100vh-64px)] animate-pulse bg-gray-100 dark:bg-divider" />}>
       <ItinerairesContent />
     </Suspense>
   )

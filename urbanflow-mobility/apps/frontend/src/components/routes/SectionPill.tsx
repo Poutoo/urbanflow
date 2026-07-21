@@ -1,5 +1,7 @@
 'use client'
 import { Icon } from '@iconify/react'
+import { useIsDarkMode } from '@/hooks/useIsDarkMode'
+import { getContentColor, hexToRgba } from '@/lib/darkColors'
 
 interface ModeConfig {
   icon: string
@@ -28,16 +30,19 @@ interface Props {
 }
 
 export function SectionPill({ type, mode, line, duration }: Props) {
+  const isDark = useIsDarkMode()
   const key = type === 'public_transport' ? mode.toLowerCase() : type
   const config = MODE_CONFIG[key] ?? MODE_CONFIG[mode.toLowerCase()] ?? MODE_CONFIG.default!
   const mins = Math.round(duration / 60)
+  const text = getContentColor(config.text, isDark)
+  const bg = isDark ? hexToRgba(text, 0.14) : config.bg
 
   if (mins === 0) return null
 
   return (
     <span
       className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
-      style={{ backgroundColor: config.bg, color: config.text }}
+      style={{ backgroundColor: bg, color: text }}
     >
       <Icon icon={config.icon} width={13} aria-hidden="true" />
       {line && <span className="font-bold">{line}</span>}
