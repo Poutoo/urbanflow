@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { Icon } from '@iconify/react';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 
@@ -15,13 +16,6 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
-
-const MailIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="2" y="4" width="20" height="16" rx="2" />
-    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-  </svg>
-);
 
 interface EyeIconProps {
   open: boolean;
@@ -41,16 +35,6 @@ const EyeIcon = ({ open }: EyeIconProps) =>
       <line x1="2" x2="22" y1="2" y2="22" />
     </svg>
   );
-
-interface LightningIconProps {
-  className?: string;
-}
-
-const LightningIcon = ({ className = '' }: LightningIconProps) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-  </svg>
-);
 
 export function LoginForm() {
   const router = useRouter();
@@ -92,7 +76,7 @@ export function LoginForm() {
         type="email"
         placeholder="vous@exemple.fr"
         autoComplete="email"
-        icon={<MailIcon />}
+        icon={<Icon icon="ph:envelope-simple" width={16} />}
         error={errors.email?.message}
         {...register('email')}
       />
@@ -111,7 +95,7 @@ export function LoginForm() {
           type={showPassword ? 'text' : 'password'}
           placeholder="••••••••"
           autoComplete="current-password"
-          icon={<LightningIcon className="text-[#1A5F7A] dark:text-primary-content" />}
+          icon={<Icon icon="ph:lock-simple" width={16} className="text-[#1A5F7A] dark:text-primary-content" />}
           rightIcon={
             <button
               type="button"

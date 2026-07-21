@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { signOut } from 'next-auth/react';
+import { Icon } from '@iconify/react';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { EcoBadge } from '@/components/profile/EcoBadge';
 import { TransportModes } from '@/components/profile/TransportModes';
@@ -24,8 +25,8 @@ interface FavoriteAddress {
 }
 
 const FAVORITE_ADDRESSES: FavoriteAddress[] = [
-  { icon: '🏠', label: 'Domicile', address: '12 rue des Lilas, Centre' },
-  { icon: '💼', label: 'Travail', address: "Parc d'activités Nord, Bât. C" },
+  { icon: 'ph:house-simple', label: 'Domicile', address: '12 rue des Lilas, Centre' },
+  { icon: 'ph:briefcase', label: 'Travail', address: "Parc d'activités Nord, Bât. C" },
 ];
 
 const PRIORITY_MODES: { value: PriorityMode; label: string }[] = [
@@ -76,10 +77,10 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
             {FAVORITE_ADDRESSES.map((addr) => (
               <li key={addr.label} className="flex items-center gap-3 py-3">
                 <span
-                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[8px] bg-gray-100 text-lg dark:bg-divider/60"
+                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[8px] bg-gray-100 text-[#1A5F7A] dark:bg-divider/60 dark:text-primary-content"
                   aria-hidden="true"
                 >
-                  {addr.icon}
+                  <Icon icon={addr.icon} width={18} />
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-[#0F1B2D] dark:text-text-main">{addr.label}</p>
@@ -164,7 +165,12 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
         <Card padding="sm">
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-3">
-              <span className="text-2xl" aria-hidden="true">♿</span>
+              <span
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[8px] bg-gray-100 text-[#1A5F7A] dark:bg-divider/60 dark:text-primary-content"
+                aria-hidden="true"
+              >
+                <Icon icon="ph:wheelchair" width={18} />
+              </span>
               <div>
                 <p className="font-medium text-[#0F1B2D] dark:text-text-main">Itinéraires PMR</p>
                 <p className="text-xs text-[#6B7280] dark:text-muted">Prioriser les trajets accessibles</p>

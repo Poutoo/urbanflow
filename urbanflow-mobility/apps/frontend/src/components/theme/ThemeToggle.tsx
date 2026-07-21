@@ -11,7 +11,12 @@ export function ThemeToggle() {
   return (
     <div className="flex items-center justify-between py-1">
       <div className="flex items-center gap-3">
-        <Icon icon="ph:moon" width={24} className="text-[#B85C00] dark:text-accent-content" aria-hidden="true" />
+        <span
+          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[8px] bg-gray-100 text-[#B85C00] dark:bg-divider/60 dark:text-accent-content"
+          aria-hidden="true"
+        >
+          <Icon icon="ph:moon" width={18} />
+        </span>
         <div>
           <p className="font-medium text-[#0F1B2D] dark:text-text-main">Mode sombre</p>
           <p className="text-xs text-[#6B7280] dark:text-muted">Réduit la consommation d&apos;énergie</p>
