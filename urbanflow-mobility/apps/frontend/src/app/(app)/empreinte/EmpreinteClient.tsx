@@ -120,7 +120,7 @@ export function EmpreinteClient() {
           <p className="text-2xl font-bold leading-tight">
             {data.weekly.totalWeekKg.toFixed(1)} kg
           </p>
-          <p className="text-sm text-white/85">CO₂ évité cette semaine</p>
+          <p className="text-sm text-white/95">CO₂ évité cette semaine</p>
         </div>
       </div>
 

@@ -4,10 +4,16 @@
  * dessus). Sur le fond sombre (#0B1622), plusieurs valeurs claires tombent
  * sous le seuil WCAG AA (4.5:1) : bus 2.72:1, marche 3.20:1, metro 2.90:1,
  * tram 3.63:1, accent/covoiturage 3.97:1, secondary 3.59:1 — vérifié par
- * calcul de luminance relative. velo (5.53:1) et trottinette (4.95:1)
- * passent déjà tels quels et n'ont pas de variante ici. rapidtransit
- * (RER/Transilien, 3.88:1) et le gris "muted" utilisé comme couleur de ligne
- * par défaut (3.77:1) ont aussi été vérifiés et ajoutés.
+ * calcul de luminance relative. rapidtransit (RER/Transilien, 3.88:1) et le
+ * gris "muted" utilisé comme couleur de ligne par défaut (3.77:1) aussi.
+ *
+ * velo et trottinette passaient (5.53:1 et 4.95:1) comme texte plein posé
+ * directement sur le fond de page — mais Lighthouse (audit Phase 4, écran
+ * Profil) a révélé qu'utilisées en pastille translucide (fond à ~8-12%
+ * d'opacité composité sur --color-surface, cf. Badge.tsx/EcoBadge.tsx), le
+ * fond composité résultant est plus clair que le fond de page brut, ce qui
+ * réduit l'écart de luminance sous 4.5:1 (velo 4.09-4.24:1, selon l'alpha).
+ * D'où leur ajout ici aussi, alignés sur le même traitement que les autres.
  */
 const DARK_CONTENT_COLOR: Record<string, string> = {
   '#1A5F7A': '#5CB8DE', // primary
@@ -17,6 +23,8 @@ const DARK_CONTENT_COLOR: Record<string, string> = {
   '#7C3AED': '#A78BFA', // transport.marche
   '#4F46E5': '#818CF8', // transport.metro
   '#B45309': '#FB923C', // transport.tram
+  '#16A34A': '#4ADE80', // transport.velo (5.53:1 en texte plein, insuffisant en pastille)
+  '#0891B2': '#22D3EE', // transport.trottinette (4.95:1 en texte plein, insuffisant en pastille)
   '#E11D48': '#FB7185', // RER/Transilien
   '#6B7280': '#9FB0C3', // muted (couleur de ligne par défaut)
   '#0e60a3ff': '#4FA8DE', // RouteCard, stratégie "économique" (2.80:1 → 6.93:1)

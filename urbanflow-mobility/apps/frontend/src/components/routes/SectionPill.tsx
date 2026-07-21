@@ -35,7 +35,10 @@ export function SectionPill({ type, mode, line, duration }: Props) {
   const config = MODE_CONFIG[key] ?? MODE_CONFIG[mode.toLowerCase()] ?? MODE_CONFIG.default!
   const mins = Math.round(duration / 60)
   const text = getContentColor(config.text, isDark)
-  const bg = isDark ? hexToRgba(text, 0.14) : config.bg
+  // Alpha réduit à ~8.2% (cf. Badge.tsx) : composité sur --color-surface, un
+  // fond plus opaque fait tomber certaines couleurs sous 4.5:1 (vérifié
+  // Phase 4 suite à la régression Lighthouse trouvée sur un composant frère).
+  const bg = isDark ? hexToRgba(text, 0x15 / 255) : config.bg
 
   if (mins === 0) return null
 

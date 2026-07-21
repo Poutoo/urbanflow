@@ -25,8 +25,15 @@ export function Badge({ mode, selected = false, onClick }: BadgeProps) {
   const isDark = useIsDarkMode();
   const color = getContentColor(config.color, isDark);
 
+  // Alpha du fond translucide réduit en sombre (0x20→0x15) : composité sur
+  // --color-surface (plus clair que le fond de page), un fond à 12.5% s'avère
+  // trop clair et fait tomber certaines couleurs sous 4.5:1 (ex. metro
+  // 4.41:1) — vérifié par calcul de contraste (Phase 4, régression Lighthouse
+  // sur /profil). 0x15 (~8.2%) donne 4.73:1 dans le pire cas.
+  const alphaHex = isDark ? '15' : '20';
+
   const style = selected
-    ? { backgroundColor: `${color}20`, borderColor: color, color }
+    ? { backgroundColor: `${color}${alphaHex}`, borderColor: color, color }
     : {
         backgroundColor: 'rgb(var(--color-bg))',
         borderColor: 'rgb(var(--color-divider))',
