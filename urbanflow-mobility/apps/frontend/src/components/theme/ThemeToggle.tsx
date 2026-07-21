@@ -1,18 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { Icon } from '@iconify/react';
+import { useIsDarkMode } from '@/hooks/useIsDarkMode';
 
 export function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  // resolvedTheme n'est connu qu'après hydratation côté client (system
-  // preference / localStorage) : avant ça, on affiche l'état "off" pour
-  // éviter un flash incorrect pendant le rendu serveur.
-  useEffect(() => setMounted(true), []);
-  const isDark = mounted && resolvedTheme === 'dark';
+  const { setTheme } = useTheme();
+  const isDark = useIsDarkMode();
 
   return (
     <div className="flex items-center justify-between py-1">

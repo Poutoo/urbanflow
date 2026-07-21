@@ -15,12 +15,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary:
-        'bg-[#1A5F7A] text-white hover:bg-[#164f66] active:bg-[#11404f] focus-visible:ring-[#1A5F7A] rounded-[24px]',
+        'bg-[#1A5F7A] text-white hover:bg-[#164f66] active:bg-[#11404f] focus-visible:ring-[#1A5F7A] dark:focus-visible:ring-primary-content rounded-[24px]',
       secondary:
-        'bg-transparent border-2 border-[#1A5F7A] text-[#1A5F7A] hover:bg-[#1A5F7A]/10 rounded-[24px]',
-      ghost: 'bg-transparent text-[#1A5F7A] hover:bg-[#1A5F7A]/10 rounded-[8px]',
+        'bg-transparent border-2 border-[#1A5F7A] text-[#1A5F7A] hover:bg-[#1A5F7A]/10 dark:border-primary-content dark:text-primary-content dark:hover:bg-primary-content/10 rounded-[24px]',
+      ghost:
+        'bg-transparent text-[#1A5F7A] hover:bg-[#1A5F7A]/10 dark:text-primary-content dark:hover:bg-primary-content/10 rounded-[8px]',
       google:
-        'bg-white border border-gray-200 text-[#0F1B2D] hover:bg-gray-50 shadow-sm rounded-[8px]',
+        'bg-white border border-gray-200 text-[#0F1B2D] hover:bg-gray-50 shadow-sm dark:bg-surface dark:border-divider dark:text-text-main dark:hover:bg-divider/40 rounded-[8px]',
     };
 
     const sizes = {
