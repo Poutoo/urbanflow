@@ -1,0 +1,26 @@
+# deploy/security/jail.local
+# À copier vers /etc/fail2ban/jail.local sur le VPS (ne pas modifier jail.conf directement,
+# il est écrasé par les mises à jour du paquet fail2ban).
+#
+# backend = systemd — ne pas supposer que /var/log/auth.log existe. Les images Ubuntu
+# récentes sur Hetzner n'installent pas toujours rsyslog par défaut ; SSH ne logue alors
+# que dans journald. AVANT d'installer, vérifier sur le VPS :
+#   test -f /var/log/auth.log && echo "fichier présent" || echo "absent"
+#   systemctl is-active rsyslog
+# Si le fichier est absent ou rsyslog inactif, backend=systemd est obligatoire (c'est le
+# cas retenu ici). Si au contraire /var/log/auth.log existe et rsyslog tourne, backend=systemd
+# fonctionne aussi (fail2ban lit journald directement) donc ce choix est sûr dans les deux cas.
+
+[DEFAULT]
+# IP whitelistées le 2026-07-21 : 90.63.18.239 et 83.228.240.109 (IPs de l'utilisateur,
+# confirmées avant installation de fail2ban pour éviter tout auto-bannissement).
+ignoreip = 127.0.0.1/8 ::1 90.63.18.239 83.228.240.109
+
+[sshd]
+enabled  = true
+port     = ssh
+filter   = sshd
+backend  = systemd
+maxretry = 5
+findtime = 10m
+bantime  = 1h

@@ -1,0 +1,7 @@
+// deploy/security/20auto-upgrades
+// À copier vers /etc/apt/apt.conf.d/20auto-upgrades sur le VPS.
+// Active le timer périodique (apt-daily-upgrade.timer) qui déclenche unattended-upgrade.
+// Le filtrage "sécurité uniquement" se fait dans 50unattended-upgrades (Allowed-Origins),
+// pas ici — ce fichier ne fait qu'activer le mécanisme.
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
