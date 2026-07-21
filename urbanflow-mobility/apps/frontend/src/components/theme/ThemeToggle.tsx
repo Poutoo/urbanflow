@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
+import { Icon } from '@iconify/react';
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -16,9 +17,7 @@ export function ThemeToggle() {
   return (
     <div className="flex items-center justify-between py-1">
       <div className="flex items-center gap-3">
-        <span className="text-2xl" aria-hidden="true">
-          🌙
-        </span>
+        <Icon icon="ph:moon" width={24} className="text-[#B85C00] dark:text-accent-content" aria-hidden="true" />
         <div>
           <p className="font-medium text-[#0F1B2D] dark:text-text-main">Mode sombre</p>
           <p className="text-xs text-[#6B7280] dark:text-muted">Réduit la consommation d&apos;énergie</p>
