@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { SessionProvider } from 'next-auth/react';
 import { ServiceWorkerRegister } from '@/components/pwa/ServiceWorkerRegister';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { ThemeColorMeta } from '@/components/theme/ThemeColorMeta';
 import './globals.css';
 
 // Auto-hébergée par Next.js (next/font) plutôt qu'un @import Google Fonts :
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <ThemeColorMeta />
           <ServiceWorkerRegister />
           <SessionProvider>{children}</SessionProvider>
         </ThemeProvider>

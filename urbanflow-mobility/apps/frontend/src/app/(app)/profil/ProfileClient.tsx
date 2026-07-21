@@ -7,6 +7,7 @@ import { EcoBadge } from '@/components/profile/EcoBadge';
 import { TransportModes } from '@/components/profile/TransportModes';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useApiSwr } from '@/hooks/useApiSwr';
 import type { AuthMeResponse, PriorityMode, TransportMode } from '@urbanflow/types';
 
@@ -141,6 +142,16 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
               </button>
             ))}
           </div>
+        </Card>
+      </section>
+
+      {/* Apparence */}
+      <section aria-label="Apparence">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280]">
+          APPARENCE
+        </h2>
+        <Card padding="sm">
+          <ThemeToggle />
         </Card>
       </section>
 
