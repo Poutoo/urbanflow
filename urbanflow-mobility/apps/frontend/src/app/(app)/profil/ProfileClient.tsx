@@ -61,34 +61,34 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
       {/* Adresses favorites */}
       <section aria-label="Adresses favorites">
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#6B7280]">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
             ADRESSES FAVORITES
           </h2>
           <button
             type="button"
-            className="text-sm font-medium text-[#1A5F7A] underline-offset-2 hover:underline"
+            className="text-sm font-medium text-[#1A5F7A] underline-offset-2 hover:underline dark:text-primary-content"
           >
             Gérer
           </button>
         </div>
         <Card padding="sm">
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-gray-100 dark:divide-divider">
             {FAVORITE_ADDRESSES.map((addr) => (
               <li key={addr.label} className="flex items-center gap-3 py-3">
                 <span
-                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[8px] bg-gray-100 text-lg"
+                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[8px] bg-gray-100 text-lg dark:bg-divider/60"
                   aria-hidden="true"
                 >
                   {addr.icon}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-[#0F1B2D]">{addr.label}</p>
-                  <p className="truncate text-sm text-[#6B7280]">{addr.address}</p>
+                  <p className="font-medium text-[#0F1B2D] dark:text-text-main">{addr.label}</p>
+                  <p className="truncate text-sm text-[#6B7280] dark:text-muted">{addr.address}</p>
                 </div>
                 <button
                   type="button"
                   aria-label={`Options pour ${addr.label}`}
-                  className="text-[#6B7280]"
+                  className="text-[#6B7280] dark:text-muted"
                 >
                   ···
                 </button>
@@ -97,10 +97,10 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
             <li>
               <button
                 type="button"
-                className="flex w-full items-center gap-3 py-3 text-[#1A5F7A] font-medium"
+                className="flex w-full items-center gap-3 py-3 text-[#1A5F7A] font-medium dark:text-primary-content"
               >
                 <span
-                  className="flex h-9 w-9 items-center justify-center rounded-[8px] border-2 border-dashed border-[#1A5F7A]/30 text-lg"
+                  className="flex h-9 w-9 items-center justify-center rounded-[8px] border-2 border-dashed border-[#1A5F7A]/30 text-lg dark:border-primary-content/30"
                   aria-hidden="true"
                 >
                   +
@@ -119,11 +119,11 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
 
       {/* Priorité d'itinéraire */}
       <section aria-label="Priorité d'itinéraire">
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280]">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
           PRIORITÉ D&apos;ITINÉRAIRE
         </h2>
         <Card padding="sm">
-          <div role="group" aria-label="Mode de priorité" className="flex rounded-[8px] overflow-hidden border border-gray-200">
+          <div role="group" aria-label="Mode de priorité" className="flex rounded-[8px] overflow-hidden border border-gray-200 dark:border-divider">
             {PRIORITY_MODES.map(({ value, label }) => (
               <button
                 key={value}
@@ -135,7 +135,7 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
                   'flex-1 py-2.5 text-sm font-medium transition-colors',
                   priorityMode === value
                     ? 'bg-[#1A5F7A] text-white'
-                    : 'bg-white text-[#6B7280] hover:bg-gray-50',
+                    : 'bg-white text-[#6B7280] hover:bg-gray-50 dark:bg-surface dark:text-muted dark:hover:bg-divider/40',
                 ].join(' ')}
               >
                 {label}
@@ -147,7 +147,7 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
 
       {/* Application */}
       <section aria-label="Application">
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280]">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
           APPLICATION
         </h2>
         <Card padding="sm">
@@ -157,17 +157,17 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
 
       {/* Accessibilité */}
       <section aria-label="Accessibilité PMR">
-        <h2 className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#6B7280]">
+        <h2 className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
           ACCESSIBILITÉ
         </h2>
-        <p className="mb-2 text-xs text-[#6B7280]">Conformité WCAG 2.1 AA</p>
+        <p className="mb-2 text-xs text-[#6B7280] dark:text-muted">Conformité WCAG 2.1 AA</p>
         <Card padding="sm">
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-3">
               <span className="text-2xl" aria-hidden="true">♿</span>
               <div>
-                <p className="font-medium text-[#0F1B2D]">Itinéraires PMR</p>
-                <p className="text-xs text-[#6B7280]">Prioriser les trajets accessibles</p>
+                <p className="font-medium text-[#0F1B2D] dark:text-text-main">Itinéraires PMR</p>
+                <p className="text-xs text-[#6B7280] dark:text-muted">Prioriser les trajets accessibles</p>
               </div>
             </div>
             <button
@@ -177,8 +177,8 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
               aria-label="Activer les itinéraires PMR"
               onClick={() => setPmrEnabled((v) => !v)}
               className={[
-                'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A5F7A] focus-visible:ring-offset-2',
-                pmrEnabled ? 'bg-[#2D7D46]' : 'bg-gray-200',
+                'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A5F7A] focus-visible:ring-offset-2 dark:focus-visible:ring-primary-content',
+                pmrEnabled ? 'bg-[#2D7D46]' : 'bg-gray-200 dark:bg-divider',
               ].join(' ')}
             >
               <span
