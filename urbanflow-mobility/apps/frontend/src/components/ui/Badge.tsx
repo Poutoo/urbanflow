@@ -2,7 +2,7 @@
 
 import type { TransportMode } from '@urbanflow/types';
 import { useIsDarkMode } from '@/hooks/useIsDarkMode';
-import { getContentColor } from '@/lib/darkColors';
+import { getPillColor } from '@/lib/darkColors';
 
 const modeConfig: Record<TransportMode, { label: string; color: string }> = {
   velo: { label: 'Vélo', color: '#16A34A' },
@@ -23,7 +23,7 @@ interface BadgeProps {
 export function Badge({ mode, selected = false, onClick }: BadgeProps) {
   const config = modeConfig[mode];
   const isDark = useIsDarkMode();
-  const color = getContentColor(config.color, isDark);
+  const color = getPillColor(config.color, isDark);
 
   // Alpha du fond translucide réduit en sombre (0x20→0x15) : composité sur
   // --color-surface (plus clair que le fond de page), un fond à 12.5% s'avère

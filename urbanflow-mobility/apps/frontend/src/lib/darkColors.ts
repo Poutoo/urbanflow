@@ -41,6 +41,32 @@ export function getContentColor(hex: string, isDark: boolean): string {
 }
 
 /**
+ * Variantes plus foncées pour l'usage "pastille translucide" (texte + fond à
+ * faible opacité de la même teinte, cf. Badge.tsx/EcoBadge.tsx) EN MODE
+ * CLAIR. Ce pattern est plus strict qu'un simple texte sur fond blanc : le
+ * fond composité (~8-12% d'opacité sur blanc) reste très proche du blanc,
+ * ce qui réduit l'écart de luminance. Vérifié par calcul : vélo (2.87:1),
+ * trottinette (3.17:1), tram (4.23:1) et accent/covoiturage (3.90:1)
+ * échouaient l'AA dans ce contexte précis, alors qu'ils passent tous comme
+ * texte plein sur blanc — d'où une palette séparée, pas une correction de
+ * --color-primary/secondary/accent eux-mêmes (qui restent corrects partout
+ * ailleurs, ex. MonthlyGoal, RouteCard).
+ */
+const LIGHT_PILL_COLOR: Record<string, string> = {
+  '#16A34A': '#166534', // velo
+  '#0891B2': '#155E75', // trottinette
+  '#B45309': '#92400E', // tram
+  '#B85C00': '#92400E', // accent / covoiturage
+  '#2D7D46': '#256B3B', // secondary (4.44:1 dans ce contexte, tout juste insuffisant)
+};
+
+/** Résout une couleur de marque pour l'usage "pastille translucide" (texte + fond à faible opacité) dans le thème actif. */
+export function getPillColor(hex: string, isDark: boolean): string {
+  if (isDark) return getContentColor(hex, true);
+  return LIGHT_PILL_COLOR[hex] ?? hex;
+}
+
+/**
  * Convertit un hex #RRGGBB en rgba() avec l'alpha donné — sert à dériver des
  * fonds/bordures teintés en sombre à partir d'une couleur de contenu déjà
  * résolue, sans avoir à choisir une seconde palette de pastels à la main

@@ -2,7 +2,7 @@
 
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { useIsDarkMode } from '@/hooks/useIsDarkMode';
-import { getContentColor } from '@/lib/darkColors';
+import { getPillColor } from '@/lib/darkColors';
 import { ECO_BADGE_LEVELS } from './ecoBadgeLevels';
 
 interface EcoBadgeProps {
@@ -14,8 +14,13 @@ export function EcoBadge({ badgeLevel, totalCo2SavedKg }: EcoBadgeProps) {
   const isDark = useIsDarkMode();
   const current = ECO_BADGE_LEVELS.find((l) => l.level === badgeLevel);
   const next = ECO_BADGE_LEVELS.find((l) => l.level === badgeLevel + 1);
-  const currentColor = current ? getContentColor(current.color, isDark) : undefined;
-  const nextColor = next ? getContentColor(next.color, isDark) : undefined;
+  // getPillColor (pas getContentColor) : le badge est une pastille
+  // translucide (fond ${color}1A) — le même calcul de contraste qui a
+  // révélé le problème en sombre (Phase 4) montre qu'en clair aussi, vélo
+  // (2.94:1), secondary (4.44:1) et tram (4.37:1) échouent l'AA dans ce
+  // contexte précis, alors qu'ils passent comme texte plein sur blanc.
+  const currentColor = current ? getPillColor(current.color, isDark) : undefined;
+  const nextColor = next ? getPillColor(next.color, isDark) : undefined;
 
   return (
     <div className="space-y-2 px-4 pb-3">
