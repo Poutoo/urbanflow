@@ -145,10 +145,10 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
         </Card>
       </section>
 
-      {/* Apparence */}
-      <section aria-label="Apparence">
+      {/* Application */}
+      <section aria-label="Application">
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280]">
-          APPARENCE
+          APPLICATION
         </h2>
         <Card padding="sm">
           <ThemeToggle />
