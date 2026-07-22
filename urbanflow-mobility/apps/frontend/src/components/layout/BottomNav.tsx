@@ -53,7 +53,7 @@ export function BottomNav() {
     <nav
       role="navigation"
       aria-label="Navigation principale"
-      className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center border-t border-gray-200 bg-white shadow-[0_-2px_8px_rgba(0,0,0,0.08)]"
+      className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center border-t border-gray-200 bg-white shadow-[0_-2px_8px_rgba(0,0,0,0.08)] dark:border-divider dark:bg-surface dark:shadow-none"
     >
       {navItems.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -64,7 +64,9 @@ export function BottomNav() {
             aria-current={isActive ? 'page' : undefined}
             className={[
               'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium transition-colors duration-150',
-              isActive ? 'text-[#1A5F7A]' : 'text-[#6B7280] hover:text-[#1A5F7A]',
+              isActive
+                ? 'text-[#1A5F7A] dark:text-primary-content'
+                : 'text-[#6B7280] hover:text-[#1A5F7A] dark:text-muted dark:hover:text-primary-content',
             ].join(' ')}
           >
             {item.icon}

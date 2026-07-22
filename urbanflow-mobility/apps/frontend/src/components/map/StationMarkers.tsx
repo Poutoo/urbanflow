@@ -69,7 +69,7 @@ export function StationMarkers({ stations, highlightId }: Props) {
               <div className="text-sm">
                 <p className="font-semibold">{station.name}</p>
                 <p className="text-[#16A34A]">{station.bikesAvailable} vélos disponibles</p>
-                <p className="text-[#6B7280]">{station.docksAvailable} bornes libres</p>
+                <p className="text-[#6B7280] dark:text-muted">{station.docksAvailable} bornes libres</p>
               </div>
             </Popup>
           </Marker>

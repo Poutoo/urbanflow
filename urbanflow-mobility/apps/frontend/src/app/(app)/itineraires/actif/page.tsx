@@ -5,10 +5,12 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Icon } from '@iconify/react'
 import { useAnimatedLatLng } from '@/hooks/useAnimatedLatLng'
 import type { RouteResult, RouteSection, Strategy } from '@/components/routes/RouteCard'
+import { useIsDarkMode } from '@/hooks/useIsDarkMode'
+import { getContentColor, hexToRgba } from '@/lib/darkColors'
 
 const MapView = dynamic(() => import('@/components/map/MapView').then((m) => m.MapView), {
   ssr: false,
-  loading: () => <div className="h-full w-full animate-pulse bg-gray-200" />,
+  loading: () => <div className="h-full w-full animate-pulse bg-gray-200 dark:bg-divider" />,
 })
 
 const STRATEGY_LABEL: Record<Strategy, string> = {
@@ -70,6 +72,7 @@ const PARIS = { lat: 48.8566, lng: 2.3522 }
 function ActiveJourneyContent() {
   const params = useSearchParams()
   const router = useRouter()
+  const isDark = useIsDarkMode()
   const strategy = (params.get('strategy') as Strategy | null) ?? 'ecological'
 
   const [route, setRoute] = useState<RouteResult | null>(null)
@@ -117,7 +120,7 @@ function ActiveJourneyContent() {
         <span className="text-4xl" aria-hidden="true">
           🧭
         </span>
-        <p className="text-sm font-medium text-[#0F1B2D]">
+        <p className="text-sm font-medium text-[#0F1B2D] dark:text-text-main">
           Aucun trajet en cours. Lancez un itinéraire depuis la carte.
         </p>
         <a
@@ -131,7 +134,7 @@ function ActiveJourneyContent() {
   }
 
   if (!route) {
-    return <div className="h-[calc(100vh-64px)] animate-pulse bg-gray-100" />
+    return <div className="h-[calc(100vh-64px)] animate-pulse bg-gray-100 dark:bg-divider" />
   }
 
   // La position affichée suit la progression simulée par étape plutôt que le
@@ -159,32 +162,33 @@ function ActiveJourneyContent() {
       </div>
 
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-[#E5E7EB] bg-white px-4 py-3">
+      <div className="flex shrink-0 items-center justify-between border-b border-[#E5E7EB] bg-white px-4 py-3 dark:border-divider dark:bg-surface">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2D7D46] opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#2D7D46]" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#2D7D46] opacity-75 dark:bg-secondary-content" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#2D7D46] dark:bg-secondary-content" />
             </span>
-            <p className="text-sm font-bold text-[#0F1B2D]">
+            <p className="text-sm font-bold text-[#0F1B2D] dark:text-text-main">
               En route · {STRATEGY_LABEL[strategy]}
             </p>
           </div>
-          <p className="text-xs text-[#6B7280]">
+          <p className="text-xs text-[#6B7280] dark:text-muted">
             Simulation du trajet · étape {activeStep + 1}/{sections.length}
           </p>
         </div>
         <div className="text-right">
-          <p className="text-lg font-bold text-[#1A5F7A]">{formatDuration(remainingSec)}</p>
-          <p className="text-xs text-[#6B7280]">restant</p>
+          <p className="text-lg font-bold text-[#1A5F7A] dark:text-primary-content">{formatDuration(remainingSec)}</p>
+          <p className="text-xs text-[#6B7280] dark:text-muted">restant</p>
         </div>
       </div>
 
       {/* Liste des sections */}
-      <div className="flex-1 overflow-y-auto bg-[#F7F9FC] px-4 py-3">
+      <div className="flex-1 overflow-y-auto bg-[#F7F9FC] px-4 py-3 dark:bg-bg">
         <ol className="flex flex-col gap-2">
           {sections.map((section, i) => {
             const meta = MODE_META[modeKey(section)]!
+            const metaColor = getContentColor(meta.color, isDark)
             const isActive = i === activeStep
             const isDone = i < activeStep
             return (
@@ -198,15 +202,15 @@ function ActiveJourneyContent() {
                     isActive
                       ? 'bg-[#1A5F7A] text-white shadow-sm'
                       : isDone
-                        ? 'bg-white text-[#9CA3AF]'
-                        : 'bg-white text-[#0F1B2D]',
+                        ? 'bg-white text-[#9CA3AF] dark:bg-surface'
+                        : 'bg-white text-[#0F1B2D] dark:bg-surface dark:text-text-main',
                   ].join(' ')}
                 >
                   <span
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
                     style={{
-                      backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : `${meta.color}1A`,
-                      color: isActive ? '#FFFFFF' : meta.color,
+                      backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : hexToRgba(metaColor, 0.14),
+                      color: isActive ? '#FFFFFF' : metaColor,
                     }}
                     aria-hidden="true"
                   >
@@ -220,7 +224,7 @@ function ActiveJourneyContent() {
                     <p
                       className={[
                         'truncate text-sm',
-                        isActive ? 'text-white/85' : 'text-[#6B7280]',
+                        isActive ? 'text-white/85' : 'text-[#6B7280] dark:text-muted',
                       ].join(' ')}
                     >
                       {sectionInstruction(section, meta)}
@@ -229,7 +233,7 @@ function ActiveJourneyContent() {
                   <span
                     className={[
                       'shrink-0 text-sm font-medium',
-                      isActive ? 'text-white' : 'text-[#6B7280]',
+                      isActive ? 'text-white' : 'text-[#6B7280] dark:text-muted',
                     ].join(' ')}
                   >
                     {Math.max(1, Math.round(section.duration / 60))} min
@@ -242,7 +246,7 @@ function ActiveJourneyContent() {
       </div>
 
       {/* Actions */}
-      <div className="flex shrink-0 gap-2 border-t border-[#E5E7EB] bg-white px-4 py-3">
+      <div className="flex shrink-0 gap-2 border-t border-[#E5E7EB] bg-white px-4 py-3 dark:border-divider dark:bg-surface">
         {!isLastStep && (
           <button
             type="button"
@@ -260,7 +264,7 @@ function ActiveJourneyContent() {
             'flex items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold transition',
             isLastStep
               ? 'flex-1 bg-[#2D7D46] text-white'
-              : 'flex-1 border border-[#D1D5DB] bg-white text-[#6B7280]',
+              : 'flex-1 border border-[#D1D5DB] bg-white text-[#6B7280] dark:border-divider dark:bg-surface dark:text-muted',
           ].join(' ')}
         >
           <Icon icon="ph:flag-checkered" width={16} aria-hidden="true" />
@@ -273,7 +277,7 @@ function ActiveJourneyContent() {
 
 export default function ActiveJourneyPage() {
   return (
-    <Suspense fallback={<div className="h-[calc(100vh-64px)] animate-pulse bg-gray-100" />}>
+    <Suspense fallback={<div className="h-[calc(100vh-64px)] animate-pulse bg-gray-100 dark:bg-divider" />}>
       <ActiveJourneyContent />
     </Suspense>
   )

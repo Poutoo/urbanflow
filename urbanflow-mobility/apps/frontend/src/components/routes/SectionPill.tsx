@@ -1,5 +1,7 @@
 'use client'
 import { Icon } from '@iconify/react'
+import { useIsDarkMode } from '@/hooks/useIsDarkMode'
+import { getContentColor, hexToRgba } from '@/lib/darkColors'
 
 interface ModeConfig {
   icon: string
@@ -28,16 +30,22 @@ interface Props {
 }
 
 export function SectionPill({ type, mode, line, duration }: Props) {
+  const isDark = useIsDarkMode()
   const key = type === 'public_transport' ? mode.toLowerCase() : type
   const config = MODE_CONFIG[key] ?? MODE_CONFIG[mode.toLowerCase()] ?? MODE_CONFIG.default!
   const mins = Math.round(duration / 60)
+  const text = getContentColor(config.text, isDark)
+  // Alpha réduit à ~8.2% (cf. Badge.tsx) : composité sur --color-surface, un
+  // fond plus opaque fait tomber certaines couleurs sous 4.5:1 (vérifié
+  // Phase 4 suite à la régression Lighthouse trouvée sur un composant frère).
+  const bg = isDark ? hexToRgba(text, 0x15 / 255) : config.bg
 
   if (mins === 0) return null
 
   return (
     <span
       className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
-      style={{ backgroundColor: config.bg, color: config.text }}
+      style={{ backgroundColor: bg, color: text }}
     >
       <Icon icon={config.icon} width={13} aria-hidden="true" />
       {line && <span className="font-bold">{line}</span>}

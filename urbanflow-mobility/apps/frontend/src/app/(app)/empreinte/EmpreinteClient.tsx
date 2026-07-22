@@ -27,10 +27,10 @@ function getCurrentWeekLabel(): string {
 function LoadingSkeleton() {
   return (
     <div className="flex flex-col gap-6 p-4 pb-24" aria-busy="true" aria-label="Chargement">
-      <div className="h-8 w-48 animate-pulse rounded-lg bg-gray-200" />
-      <div className="h-48 animate-pulse rounded-2xl bg-gray-200" />
-      <div className="h-24 animate-pulse rounded-2xl bg-gray-200" />
-      <div className="h-40 animate-pulse rounded-2xl bg-gray-200" />
+      <div className="h-8 w-48 animate-pulse rounded-lg bg-gray-200 dark:bg-divider" />
+      <div className="h-48 animate-pulse rounded-2xl bg-gray-200 dark:bg-divider" />
+      <div className="h-24 animate-pulse rounded-2xl bg-gray-200 dark:bg-divider" />
+      <div className="h-40 animate-pulse rounded-2xl bg-gray-200 dark:bg-divider" />
     </div>
   )
 }
@@ -63,7 +63,7 @@ export function EmpreinteClient() {
     return (
       <div className="flex h-[calc(100vh-64px)] flex-col items-center justify-center gap-3 px-6 text-center">
         <span className="text-4xl" aria-hidden="true">🌿</span>
-        <p className="text-sm font-medium text-[#0F1B2D]">
+        <p className="text-sm font-medium text-[#0F1B2D] dark:text-text-main">
           {sessionStatus === 'unauthenticated'
             ? 'Connectez-vous pour suivre votre empreinte CO₂.'
             : 'Impossible de charger vos données. Vérifiez que le serveur est démarré.'}
@@ -81,18 +81,18 @@ export function EmpreinteClient() {
   const totalKmDoux = data.breakdown.reduce((sum, m) => sum + m.distanceKm, 0)
 
   return (
-    <div className="flex flex-col gap-4 bg-[#F7F9FC] p-4 pb-24">
+    <div className="flex flex-col gap-4 bg-[#F7F9FC] p-4 pb-24 dark:bg-bg">
       {/* En-tête */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-[#0F1B2D]">Mon empreinte</h1>
-          <p className="text-sm text-[#6B7280]">Semaine {getCurrentWeekLabel()}</p>
+          <h1 className="text-xl font-bold text-[#0F1B2D] dark:text-text-main">Mon empreinte</h1>
+          <p className="text-sm text-[#6B7280] dark:text-muted">Semaine {getCurrentWeekLabel()}</p>
         </div>
         <div className="relative">
           <button
             type="button"
             onClick={() => void handleShare(data.weekly.totalWeekKg)}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#1A5F7A] shadow-sm transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A5F7A]"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#1A5F7A] shadow-sm transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A5F7A] dark:bg-surface dark:text-primary-content dark:shadow-none dark:hover:bg-divider/40 dark:focus-visible:ring-primary-content"
             aria-label="Partager mon empreinte CO₂"
           >
             <Icon icon="ph:share-network" width={20} aria-hidden="true" />
@@ -120,25 +120,25 @@ export function EmpreinteClient() {
           <p className="text-2xl font-bold leading-tight">
             {data.weekly.totalWeekKg.toFixed(1)} kg
           </p>
-          <p className="text-sm text-white/85">CO₂ évité cette semaine</p>
+          <p className="text-sm text-white/95">CO₂ évité cette semaine</p>
         </div>
       </div>
 
       {/* Graphique hebdomadaire */}
-      <section className="rounded-2xl bg-white p-4 shadow-sm" aria-label="CO₂ évité par jour">
-        <h2 className="mb-4 font-semibold text-[#0F1B2D]">CO₂ évité par jour</h2>
+      <section className="rounded-2xl bg-white p-4 shadow-sm dark:bg-surface dark:shadow-none" aria-label="CO₂ évité par jour">
+        <h2 className="mb-4 font-semibold text-[#0F1B2D] dark:text-text-main">CO₂ évité par jour</h2>
         <WeeklyChart days={data.weekly.days} />
       </section>
 
       {/* Objectif mensuel */}
-      <section className="rounded-2xl bg-white p-4 shadow-sm" aria-label="Objectif mensuel">
+      <section className="rounded-2xl bg-white p-4 shadow-sm dark:bg-surface dark:shadow-none" aria-label="Objectif mensuel">
         <MonthlyGoal {...data.monthly} />
       </section>
 
       {/* Répartition par mode */}
-      <section className="rounded-2xl bg-white p-4 shadow-sm" aria-label="Répartition des trajets">
-        <h2 className="mb-1 font-semibold text-[#0F1B2D]">Répartition de vos trajets</h2>
-        <p className="mb-3 text-sm text-[#6B7280]">
+      <section className="rounded-2xl bg-white p-4 shadow-sm dark:bg-surface dark:shadow-none" aria-label="Répartition des trajets">
+        <h2 className="mb-1 font-semibold text-[#0F1B2D] dark:text-text-main">Répartition de vos trajets</h2>
+        <p className="mb-3 text-sm text-[#6B7280] dark:text-muted">
           {totalKmDoux} km parcourus en mobilité douce ce mois-ci
         </p>
         <ModeBreakdown breakdown={data.breakdown} />

@@ -176,6 +176,14 @@ Ces specs n'ont pas été rejouées dans le cadre de cette vérification (elles 
 
 Il n'existe pas de dossier `deploy/` séparé : toute la configuration de production (`Dockerfile`, `docker-compose.prod.yml`, `Caddyfile`) vit à la racine de `urbanflow-mobility/`.
 
+### Résilience et auto-guérison
+
+Les 3 services (`backend`, `redis`, `caddy`) ont `restart: unless-stopped` : si un conteneur **crashe** (process tué, exit code non-zero), Docker le relance automatiquement. Testé en conditions réelles : un `SIGKILL` envoyé directement au process (hors API `docker kill`/`docker stop`, qui marquent le conteneur comme arrêté volontairement et désactivent le restart) déclenche bien un redémarrage automatique en quelques secondes.
+
+Le service `backend` a en plus un **healthcheck Docker** (`GET /api/health`, toutes les 30s) qui interroge Prisma (`SELECT 1`) pour détecter un process vivant mais qui ne répond plus (connexion DB perdue, deadlock). `/api/auth/me` a été écarté : sans token, `JwtAuthGuard` répond 401 avant même d'atteindre Prisma — vérifié en local en coupant Postgres, le conteneur restait "healthy". `caddy` a `depends_on: backend: condition: service_healthy`, donc il n'est démarré qu'une fois le backend réellement prêt (pas juste lancé).
+
+**Point important, vérifié en local** : un healthcheck qui échoue marque le conteneur `unhealthy`, mais **Docker Compose ne redémarre pas un conteneur unhealthy** — seul un crash (exit) déclenche `restart: unless-stopped`. Confirmé en coupant Postgres : après 3 échecs consécutifs (~90s), le backend passait à `unhealthy` et y restait indéfiniment (`RestartCount` figé à 0), sans jamais redémarrer tout seul. Il est revenu `healthy` de lui-même dès que Postgres a été relancé (pas de restart nécessaire pour un problème transitoire), mais rien ne force un restart si le process reste bloqué (deadlock, event loop figé). **Un mécanisme supplémentaire est donc nécessaire** pour ce cas (non implémenté ici) — par exemple un cron sur le VPS qui vérifie `docker inspect --format='{{.State.Health.Status}}' backend` et fait `docker restart` après N échecs, ou un sidecar dédié (ex. `willfarrell/autoheal`).
+
 ---
 
 ## Structure du monorepo
