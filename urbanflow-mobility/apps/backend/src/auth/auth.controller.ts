@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Body,
   UseGuards,
   Req,
@@ -10,9 +11,10 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Request as ExpressRequest } from 'express';
-import { AuthService } from './auth.service';
+import { AuthService, OAuthLoginResponse } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshDto } from './dto/refresh.dto';
+import { OAuthLoginDto } from './dto/oauth-login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import type { AuthMeResponse, AuthResponse, AuthUser, JwtPayload } from '@urbanflow/types';
@@ -38,6 +40,23 @@ export class AuthController {
   async login(@Req() req: RequestWithUser): Promise<AuthResponse> {
     const userAgent = req.headers['user-agent'];
     return this.authService.login(req.user, userAgent, req.ip);
+  }
+
+  @Post('oauth/google')
+  @HttpCode(HttpStatus.OK)
+  async loginWithGoogle(
+    @Body() dto: OAuthLoginDto,
+    @Req() req: ExpressRequest,
+  ): Promise<OAuthLoginResponse> {
+    const userAgent = req.headers['user-agent'];
+    return this.authService.loginWithGoogle(dto.idToken, userAgent, req.ip);
+  }
+
+  @Patch('accept-terms')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtAuthGuard)
+  async acceptTerms(@Req() req: RequestWithJwt): Promise<void> {
+    return this.authService.acceptTerms(req.user.sub);
   }
 
   @Post('refresh')

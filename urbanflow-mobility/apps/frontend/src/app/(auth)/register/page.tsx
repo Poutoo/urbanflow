@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { LegalFooter } from '@/components/legal/LegalFooter';
 import { registerUser } from '@/lib/api';
 
 const schema = z.object({
@@ -18,6 +19,9 @@ const schema = z.object({
     .string()
     .min(8, 'Au moins 8 caractères')
     .max(128, 'Maximum 128 caractères'),
+  acceptTerms: z.boolean().refine((val) => val === true, {
+    message: "Vous devez accepter les conditions d'utilisation et la politique de confidentialité",
+  }),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -29,13 +33,19 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { acceptTerms: false },
+  });
+
+  const acceptTerms = watch('acceptTerms');
 
   const onSubmit = async (data: FormValues) => {
     setServerError(null);
     try {
-      await registerUser(data);
+      await registerUser({ name: data.name, email: data.email, password: data.password });
       router.push('/login?registered=1');
     } catch (err: unknown) {
       const message =
@@ -81,7 +91,41 @@ export default function RegisterPage() {
           error={errors.password?.message}
           {...register('password')}
         />
-        <Button type="submit" size="lg" loading={isSubmitting}>
+        <div className="flex items-start gap-2.5">
+          <input
+            type="checkbox"
+            id="accept-terms"
+            className="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-gray-300 text-[#1A5F7A] focus:ring-2 focus:ring-[#1A5F7A] dark:border-divider dark:bg-surface dark:focus:ring-primary-content"
+            {...register('acceptTerms')}
+          />
+          <label htmlFor="accept-terms" className="text-sm text-[#0F1B2D] dark:text-text-main">
+            J&apos;ai lu et j&apos;accepte les{' '}
+            <Link
+              href="/cgu"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-[#1A5F7A] underline-offset-2 hover:underline dark:text-primary-content"
+            >
+              Conditions d&apos;utilisation
+            </Link>{' '}
+            et la{' '}
+            <Link
+              href="/confidentialite"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-[#1A5F7A] underline-offset-2 hover:underline dark:text-primary-content"
+            >
+              Politique de confidentialité
+            </Link>
+          </label>
+        </div>
+        {errors.acceptTerms ? (
+          <p role="alert" className="-mt-2 text-sm text-red-600 dark:text-red-400">
+            {errors.acceptTerms.message}
+          </p>
+        ) : null}
+
+        <Button type="submit" size="lg" loading={isSubmitting} disabled={!acceptTerms || isSubmitting}>
           Créer mon compte
         </Button>
       </form>
@@ -95,6 +139,8 @@ export default function RegisterPage() {
           Se connecter
         </Link>
       </p>
+
+      <LegalFooter />
     </AuthLayout>
   );
 }

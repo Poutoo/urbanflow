@@ -9,7 +9,7 @@ export function ThemeToggle() {
   const isDark = useIsDarkMode();
 
   return (
-    <div className="flex items-center justify-between py-1">
+    <div className="flex items-center justify-between py-2.5">
       <div className="flex items-center gap-3">
         <span
           className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[8px] bg-gray-100 text-[#B85C00] dark:bg-divider/60 dark:text-accent-content"

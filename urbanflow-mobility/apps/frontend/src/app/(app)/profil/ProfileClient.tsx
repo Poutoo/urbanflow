@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import { Icon } from '@iconify/react';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
@@ -146,16 +147,6 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
         </Card>
       </section>
 
-      {/* Application */}
-      <section aria-label="Application">
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
-          APPLICATION
-        </h2>
-        <Card padding="sm">
-          <ThemeToggle />
-        </Card>
-      </section>
-
       {/* Accessibilité */}
       <section aria-label="Accessibilité PMR">
         <h2 className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
@@ -194,6 +185,35 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
                 ].join(' ')}
               />
             </button>
+          </div>
+        </Card>
+      </section>
+
+      {/* Application */}
+      <section aria-label="Application">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
+          APPLICATION
+        </h2>
+        <Card padding="sm">
+          <div className="divide-y divide-gray-100 dark:divide-divider">
+            <ThemeToggle />
+            <Link
+              href="/aide-confidentialite"
+              className="flex items-center justify-between gap-3 py-2.5 font-medium text-[#0F1B2D] hover:text-[#1A5F7A] dark:text-text-main dark:hover:text-primary-content"
+            >
+              <span className="flex items-center gap-3">
+                <span
+                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[8px] bg-gray-100 text-[#1A5F7A] dark:bg-divider/60 dark:text-primary-content"
+                  aria-hidden="true"
+                >
+                  <Icon icon="ph:info" width={18} />
+                </span>
+                Aide &amp; confidentialité
+              </span>
+              <span aria-hidden="true" className="text-[#6B7280] dark:text-muted">
+                ›
+              </span>
+            </Link>
           </div>
         </Card>
       </section>
