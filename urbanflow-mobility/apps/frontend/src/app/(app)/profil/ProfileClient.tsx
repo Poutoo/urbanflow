@@ -199,7 +199,7 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
             <ThemeToggle />
             <Link
               href="/aide-confidentialite"
-              className="flex items-center justify-between gap-3 py-3 font-medium text-[#0F1B2D] hover:text-[#1A5F7A] dark:text-text-main dark:hover:text-primary-content"
+              className="flex items-center justify-between gap-3 py-1 font-medium text-[#0F1B2D] hover:text-[#1A5F7A] dark:text-text-main dark:hover:text-primary-content"
             >
               <span className="flex items-center gap-3">
                 <span
