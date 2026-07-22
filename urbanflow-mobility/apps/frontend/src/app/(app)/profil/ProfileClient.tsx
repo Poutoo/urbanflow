@@ -201,11 +201,11 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
 
       {/* Informations légales */}
       <section aria-label="Informations légales">
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280]">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
           INFORMATIONS LÉGALES
         </h2>
         <Card padding="sm">
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-gray-100 dark:divide-divider">
             {[
               { href: '/mentions-legales', label: 'Mentions légales' },
               { href: '/confidentialite', label: 'Politique de confidentialité' },
@@ -214,10 +214,10 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="flex items-center justify-between py-3 font-medium text-[#0F1B2D] hover:text-[#1A5F7A]"
+                  className="flex items-center justify-between py-3 font-medium text-[#0F1B2D] hover:text-[#1A5F7A] dark:text-text-main dark:hover:text-primary-content"
                 >
                   {link.label}
-                  <span aria-hidden="true" className="text-[#6B7280]">
+                  <span aria-hidden="true" className="text-[#6B7280] dark:text-muted">
                     ›
                   </span>
                 </Link>

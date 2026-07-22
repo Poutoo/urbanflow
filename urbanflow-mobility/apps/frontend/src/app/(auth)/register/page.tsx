@@ -95,16 +95,16 @@ export default function RegisterPage() {
           <input
             type="checkbox"
             id="accept-terms"
-            className="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-gray-300 text-[#1A5F7A] focus:ring-2 focus:ring-[#1A5F7A]"
+            className="mt-0.5 h-4 w-4 flex-shrink-0 rounded border-gray-300 text-[#1A5F7A] focus:ring-2 focus:ring-[#1A5F7A] dark:border-divider dark:bg-surface dark:focus:ring-primary-content"
             {...register('acceptTerms')}
           />
-          <label htmlFor="accept-terms" className="text-sm text-[#0F1B2D]">
+          <label htmlFor="accept-terms" className="text-sm text-[#0F1B2D] dark:text-text-main">
             J&apos;ai lu et j&apos;accepte les{' '}
             <Link
               href="/cgu"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-[#1A5F7A] underline-offset-2 hover:underline"
+              className="font-medium text-[#1A5F7A] underline-offset-2 hover:underline dark:text-primary-content"
             >
               Conditions d&apos;utilisation
             </Link>{' '}
@@ -113,14 +113,14 @@ export default function RegisterPage() {
               href="/confidentialite"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-[#1A5F7A] underline-offset-2 hover:underline"
+              className="font-medium text-[#1A5F7A] underline-offset-2 hover:underline dark:text-primary-content"
             >
               Politique de confidentialité
             </Link>
           </label>
         </div>
         {errors.acceptTerms ? (
-          <p role="alert" className="-mt-2 text-sm text-red-600">
+          <p role="alert" className="-mt-2 text-sm text-red-600 dark:text-red-400">
             {errors.acceptTerms.message}
           </p>
         ) : null}
