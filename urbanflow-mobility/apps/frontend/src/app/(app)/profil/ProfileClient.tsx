@@ -147,16 +147,6 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
         </Card>
       </section>
 
-      {/* Application */}
-      <section aria-label="Application">
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
-          APPLICATION
-        </h2>
-        <Card padding="sm">
-          <ThemeToggle />
-        </Card>
-      </section>
-
       {/* Accessibilité */}
       <section aria-label="Accessibilité PMR">
         <h2 className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
@@ -199,31 +189,32 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
         </Card>
       </section>
 
-      {/* Informations légales */}
-      <section aria-label="Informations légales">
+      {/* Application */}
+      <section aria-label="Application">
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
-          INFORMATIONS LÉGALES
+          APPLICATION
         </h2>
         <Card padding="sm">
-          <ul className="divide-y divide-gray-100 dark:divide-divider">
-            {[
-              { href: '/mentions-legales', label: 'Mentions légales' },
-              { href: '/confidentialite', label: 'Politique de confidentialité' },
-              { href: '/cgu', label: "Conditions d'utilisation" },
-            ].map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className="flex items-center justify-between py-3 font-medium text-[#0F1B2D] hover:text-[#1A5F7A] dark:text-text-main dark:hover:text-primary-content"
+          <div className="divide-y divide-gray-100 dark:divide-divider">
+            <ThemeToggle />
+            <Link
+              href="/aide-confidentialite"
+              className="flex items-center justify-between gap-3 py-3 font-medium text-[#0F1B2D] hover:text-[#1A5F7A] dark:text-text-main dark:hover:text-primary-content"
+            >
+              <span className="flex items-center gap-3">
+                <span
+                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[8px] bg-gray-100 text-[#1A5F7A] dark:bg-divider/60 dark:text-primary-content"
+                  aria-hidden="true"
                 >
-                  {link.label}
-                  <span aria-hidden="true" className="text-[#6B7280] dark:text-muted">
-                    ›
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                  <Icon icon="ph:info" width={18} />
+                </span>
+                Aide &amp; confidentialité
+              </span>
+              <span aria-hidden="true" className="text-[#6B7280] dark:text-muted">
+                ›
+              </span>
+            </Link>
+          </div>
         </Card>
       </section>
 
