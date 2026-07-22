@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { LegalFooter } from '@/components/legal/LegalFooter';
 import { registerUser } from '@/lib/api';
 
 const schema = z.object({
@@ -138,6 +139,8 @@ export default function RegisterPage() {
           Se connecter
         </Link>
       </p>
+
+      <LegalFooter />
     </AuthLayout>
   );
 }

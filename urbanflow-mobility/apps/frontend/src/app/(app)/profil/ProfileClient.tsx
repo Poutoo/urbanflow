@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { EcoBadge } from '@/components/profile/EcoBadge';
@@ -178,6 +179,34 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
               />
             </button>
           </div>
+        </Card>
+      </section>
+
+      {/* Informations légales */}
+      <section aria-label="Informations légales">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280]">
+          INFORMATIONS LÉGALES
+        </h2>
+        <Card padding="sm">
+          <ul className="divide-y divide-gray-100">
+            {[
+              { href: '/mentions-legales', label: 'Mentions légales' },
+              { href: '/confidentialite', label: 'Politique de confidentialité' },
+              { href: '/cgu', label: "Conditions d'utilisation" },
+            ].map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="flex items-center justify-between py-3 font-medium text-[#0F1B2D] hover:text-[#1A5F7A]"
+                >
+                  {link.label}
+                  <span aria-hidden="true" className="text-[#6B7280]">
+                    ›
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </Card>
       </section>
 

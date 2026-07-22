@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { GoogleButton } from '@/components/auth/GoogleButton';
 import { LoginForm } from '@/components/auth/LoginForm';
+import { LegalFooter } from '@/components/legal/LegalFooter';
 
 export const metadata: Metadata = {
   title: 'Connexion — UrbanFlow Mobility',
@@ -35,6 +36,7 @@ export default function LoginPage() {
           En continuant, vous acceptez les Conditions d&apos;utilisation et la Politique de
           confidentialité d&apos;UrbanFlow.
         </p>
+        <LegalFooter />
       </footer>
     </AuthLayout>
   );
