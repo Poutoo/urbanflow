@@ -5,6 +5,7 @@ export interface AuthUser {
   email: string;
   name: string | null;
   avatarUrl: string | null;
+  avatarId: AvatarId | null;
 }
 
 export interface AuthTokens {
@@ -55,6 +56,23 @@ export interface JwtPayload {
   exp?: number;
 }
 
+// ─── Avatars prédéfinis ─────────────────────────────────────────────────────
+
+/** Seule source de vérité pour les avatars sélectionnables (backend + frontend). */
+export const AVATAR_IDS = [
+  'avatar-01',
+  'avatar-02',
+  'avatar-03',
+  'avatar-04',
+  'avatar-05',
+  'avatar-06',
+  'avatar-07',
+  'avatar-08',
+  'avatar-09',
+] as const;
+
+export type AvatarId = (typeof AVATAR_IDS)[number];
+
 // ─── Profile ────────────────────────────────────────────────────────────────
 
 export type TransportMode = 'velo' | 'bus' | 'tram' | 'metro' | 'marche' | 'trottinette' | 'covoiturage';
@@ -95,6 +113,7 @@ export interface UpdateProfilePayload {
   workCoordinates?: Coordinates;
   co2Goal?: number;
   name?: string;
+  avatarId?: AvatarId;
 }
 
 // ─── Adresses favorites ─────────────────────────────────────────────────────

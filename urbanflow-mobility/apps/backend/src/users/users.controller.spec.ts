@@ -190,5 +190,38 @@ describe('UsersController (integration)', () => {
 
       expect(res.status).toBe(200);
     });
+
+    it('retourne 400 si le nom est une chaîne vide', async () => {
+      const res = await request(app.getHttpServer())
+        .put('/users/profile')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ name: '' });
+
+      expect(res.status).toBe(400);
+      expect(mockUsersService.updateProfile).not.toHaveBeenCalled();
+    });
+
+    it("retourne 400 si avatarId n'appartient pas à la liste autorisée", async () => {
+      const res = await request(app.getHttpServer())
+        .put('/users/profile')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ avatarId: 'avatar-custom-injected.png' });
+
+      expect(res.status).toBe(400);
+      expect(mockUsersService.updateProfile).not.toHaveBeenCalled();
+    });
+
+    it('accepte un avatarId valide parmi la liste autorisée', async () => {
+      const res = await request(app.getHttpServer())
+        .put('/users/profile')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ avatarId: 'avatar-03' });
+
+      expect(res.status).toBe(200);
+      expect(mockUsersService.updateProfile).toHaveBeenCalledWith(
+        'user-1',
+        expect.objectContaining({ avatarId: 'avatar-03' }),
+      );
+    });
   });
 });

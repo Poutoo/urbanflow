@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Avatar anneau indigo métro">
+  <circle cx="64" cy="64" r="64" fill="#4F46E5"/>
+  <circle cx="64" cy="64" r="24" fill="none" stroke="#FFFFFF" stroke-width="10"/>
+</svg>

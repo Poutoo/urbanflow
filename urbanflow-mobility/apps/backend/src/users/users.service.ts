@@ -17,7 +17,7 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto): Promise<UserProfile> {
-    const { name, homeCoordinates, workCoordinates, ...rest } = dto;
+    const { name, avatarId, homeCoordinates, workCoordinates, ...rest } = dto;
 
     // Prisma Json fields require plain object literals — class instances lack the index signature
     const prismaData = {
@@ -30,14 +30,21 @@ export class UsersService {
       }),
     };
 
+    // name/avatarId vivent sur User, pas UserProfile — mis à jour dans la même
+    // transaction pour que l'écran profil reste un seul appel PUT atomique.
+    const userData = {
+      ...(name !== undefined && { name }),
+      ...(avatarId !== undefined && { avatarId }),
+    };
+
     const [profile] = await this.prisma.$transaction([
       this.prisma.userProfile.upsert({
         where: { userId },
         create: { userId, ...prismaData },
         update: prismaData,
       }),
-      ...(name !== undefined
-        ? [this.prisma.user.update({ where: { id: userId }, data: { name } })]
+      ...(Object.keys(userData).length > 0
+        ? [this.prisma.user.update({ where: { id: userId }, data: userData })]
         : []),
     ]);
 

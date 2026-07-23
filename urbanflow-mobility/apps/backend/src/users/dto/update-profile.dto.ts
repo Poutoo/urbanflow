@@ -5,6 +5,7 @@ import {
   IsArray,
   IsIn,
   IsNumber,
+  IsNotEmpty,
   Min,
   Max,
   IsObject,
@@ -12,6 +13,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { AVATAR_IDS, type AvatarId } from '@urbanflow/types';
 
 class CoordinatesDto {
   @IsNumber()
@@ -85,6 +87,12 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   @MaxLength(100)
   name?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(AVATAR_IDS)
+  avatarId?: AvatarId;
 }

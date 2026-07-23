@@ -138,6 +138,19 @@ describe('UsersService', () => {
       expect(transactionArgs).toHaveLength(2);
     });
 
+    it('inclut user.update dans la transaction quand avatarId est fourni', async () => {
+      mockPrisma.$transaction.mockResolvedValue([mockProfile, mockUser]);
+
+      await service.updateProfile('user-1', { avatarId: 'avatar-03' });
+
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { avatarId: 'avatar-03' },
+      });
+      const transactionArgs: unknown[] = mockPrisma.$transaction.mock.calls[0][0] as unknown[];
+      expect(transactionArgs).toHaveLength(2);
+    });
+
     it('convertit les homeCoordinates en objet plain pour Prisma', async () => {
       mockPrisma.$transaction.mockResolvedValue([mockProfile]);
       mockPrisma.userProfile.upsert.mockResolvedValue(mockProfile);

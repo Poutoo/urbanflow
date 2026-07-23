@@ -17,6 +17,7 @@ model User {
   emailVerified   DateTime?
   name            String?
   avatarUrl       String?
+  avatarId        String?
   passwordHash    String?   @db.Text
   termsAcceptedAt DateTime?
   createdAt       DateTime  @default(now())

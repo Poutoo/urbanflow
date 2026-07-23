@@ -1,9 +1,12 @@
 import { ChevronRightIcon } from './icons';
+import type { AvatarId } from '@urbanflow/types';
 
 interface ProfileHeaderProps {
   name: string;
   email: string;
   avatarUrl: string | null;
+  avatarId?: AvatarId | null;
+  onClick?: () => void;
 }
 
 function getInitials(name: string): string {
@@ -15,14 +18,28 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-export function ProfileHeader({ name, email, avatarUrl }: ProfileHeaderProps) {
+export function ProfileHeader({ name, email, avatarUrl, avatarId, onClick }: ProfileHeaderProps) {
   const initials = getInitials(name);
 
   return (
-    <div className="flex items-center gap-4 p-4">
-      {/* Avatar */}
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
+      aria-label={onClick ? 'Modifier le profil' : undefined}
+      className="flex w-full items-center gap-4 p-4 text-left disabled:cursor-default"
+    >
+      {/* Avatar : avatar prédéfini prioritaire sur la photo de compte (Google), puis initiales */}
       <div className="flex-shrink-0">
-        {avatarUrl ? (
+        {avatarId ? (
+          <img
+            src={`/avatars/${avatarId}.svg`}
+            alt={`Avatar de ${name}`}
+            width={56}
+            height={56}
+            className="h-14 w-14 rounded-full"
+          />
+        ) : avatarUrl ? (
           <img
             src={avatarUrl}
             alt={`Avatar de ${name}`}
@@ -46,7 +63,7 @@ export function ProfileHeader({ name, email, avatarUrl }: ProfileHeaderProps) {
         <p className="truncate text-sm text-[#6B7280] dark:text-muted">{email}</p>
       </div>
 
-      <ChevronRightIcon className="flex-shrink-0 text-[#6B7280] dark:text-muted" />
-    </div>
+      {onClick && <ChevronRightIcon className="flex-shrink-0 text-[#6B7280] dark:text-muted" />}
+    </button>
   );
 }

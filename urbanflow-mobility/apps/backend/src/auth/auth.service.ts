@@ -14,6 +14,7 @@ import type {
   AuthMeResponse,
   AuthResponse,
   AuthUser,
+  AvatarId,
   JwtPayload,
   PriorityMode,
   TransportMode,
@@ -144,7 +145,13 @@ export class AuthService {
     const valid = await argon2.verify(user.passwordHash, password);
     if (!valid) return null;
 
-    return { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl };
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      avatarId: user.avatarId as AvatarId | null,
+    };
   }
 
   async login(user: AuthUser, userAgent?: string, ipAddress?: string): Promise<AuthResponse> {
@@ -187,6 +194,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       avatarUrl: user.avatarUrl,
+      avatarId: user.avatarId as AvatarId | null,
       profile: {
         preferredModes: (user.profile?.preferredModes ?? []) as TransportMode[],
         priorityMode: (user.profile?.priorityMode ?? 'ecological') as PriorityMode,
@@ -199,7 +207,13 @@ export class AuthService {
   }
 
   private async generateTokenPair(
-    user: { id: string; email: string; name: string | null; avatarUrl: string | null },
+    user: {
+      id: string;
+      email: string;
+      name: string | null;
+      avatarUrl: string | null;
+      avatarId?: string | null;
+    },
     userAgent?: string,
     ipAddress?: string,
   ): Promise<AuthResponse> {
@@ -231,7 +245,13 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+        avatarId: (user.avatarId ?? null) as AvatarId | null,
+      },
     };
   }
 }

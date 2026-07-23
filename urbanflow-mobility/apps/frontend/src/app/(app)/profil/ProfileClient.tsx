@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import { Icon } from '@iconify/react';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
+import { EditProfileForm } from '@/components/profile/EditProfileForm';
 import { EcoBadge } from '@/components/profile/EcoBadge';
 import { TransportModes } from '@/components/profile/TransportModes';
 import { ToggleRow } from '@/components/profile/ToggleRow';
@@ -45,9 +46,10 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
   const [hydrated, setHydrated] = useState(false);
   const [managingAddresses, setManagingAddresses] = useState(false);
   const [addingAddress, setAddingAddress] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
 
   // Badge éco-mobile à 3 paliers + total CO₂ économisé depuis l'API
-  const { data: me } = useApiSwr<AuthMeResponse>('/auth/me');
+  const { data: me, mutate: mutateMe } = useApiSwr<AuthMeResponse>('/auth/me');
   // Réglages persistés (modes, priorité, accessibilité, thème)
   const { data: profile } = useApiSwr<UserProfile>('/users/profile');
   const persist = useProfileMutation();
@@ -69,12 +71,32 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
     <div className="flex flex-col gap-4 px-4 pb-6 pt-4">
       {/* Header profil */}
       <Card padding="sm">
-        <ProfileHeader
-          name={initialUser.name}
-          email={initialUser.email}
-          avatarUrl={initialUser.avatarUrl}
-        />
-        {me && (
+        {editingProfile ? (
+          <EditProfileForm
+            initialName={me?.name ?? initialUser.name}
+            initialAvatarId={me?.avatarId ?? null}
+            onSave={(payload) => {
+              void (async () => {
+                await persist({
+                  name: payload.name,
+                  ...(payload.avatarId ? { avatarId: payload.avatarId } : {}),
+                });
+                await mutateMe();
+              })();
+              setEditingProfile(false);
+            }}
+            onCancel={() => setEditingProfile(false)}
+          />
+        ) : (
+          <ProfileHeader
+            name={me?.name ?? initialUser.name}
+            email={initialUser.email}
+            avatarUrl={me?.avatarUrl ?? initialUser.avatarUrl}
+            avatarId={me?.avatarId ?? null}
+            onClick={() => setEditingProfile(true)}
+          />
+        )}
+        {me && !editingProfile && (
           <EcoBadge badgeLevel={me.profile.badgeLevel} totalCo2SavedKg={me.profile.totalCo2SavedKg} />
         )}
       </Card>
