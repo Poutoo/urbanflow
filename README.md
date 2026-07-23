@@ -133,7 +133,7 @@ pnpm test:e2e        # lance les specs Cypress en mode headless
 
 ### Variables d'environnement
 
-**Backend — `apps/backend/.env`** (voir `.env.example`) : `DATABASE_URL`, `DIRECT_URL` (connexion directe requise par `prisma migrate`), `REDIS_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRY`, `JWT_REFRESH_EXPIRY`, `NAVITIA_BASE_URL` (endpoint IDFM PRIM), `NAVITIA_API_KEY`, `OPENWEATHER_API_KEY` (déclarée, non utilisée par le code actuel), `PORT`, `NODE_ENV`, `CORS_ORIGIN`.
+**Backend — `apps/backend/.env`** (voir `.env.example`) : `DATABASE_URL`, `DIRECT_URL` (connexion directe requise par `prisma migrate` — **en production, utiliser la chaîne "Session pooler" Supabase, pas la connexion directe brute** : voir [Migrations Prisma en production](#migrations-prisma-en-production)), `REDIS_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRY`, `JWT_REFRESH_EXPIRY`, `NAVITIA_BASE_URL` (endpoint IDFM PRIM), `NAVITIA_API_KEY`, `OPENWEATHER_API_KEY` (déclarée, non utilisée par le code actuel), `GOOGLE_CLIENT_ID` (même Client ID que côté frontend — vérifie la signature des ID tokens Google pour `/auth/oauth/google`), `PORT`, `NODE_ENV`, `CORS_ORIGIN`.
 
 **Frontend — `apps/frontend/.env.local`** (voir `.env.example`) : `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXT_PUBLIC_API_URL`.
 
@@ -175,6 +175,29 @@ Ces specs n'ont pas été rejouées dans le cadre de cette vérification (elles 
 - **Base de données** : Supabase PostgreSQL 16 + PostGIS (projet `urbanflow`, région `eu-west-3`) — connexion poolée (PgBouncer, port 6543) au runtime, connexion directe (port 5432) réservée aux migrations Prisma
 
 Il n'existe pas de dossier `deploy/` séparé : toute la configuration de production (`Dockerfile`, `docker-compose.prod.yml`, `Caddyfile`) vit à la racine de `urbanflow-mobility/`.
+
+### Migrations Prisma en production
+
+L'image runtime du backend (`docker-compose.prod.yml`, service `backend`) est générée via `pnpm deploy --prod --legacy` : elle ne contient **ni pnpm ni le CLI Prisma** (seul `@prisma/client`, une dependency normale, y survit — `prisma` est une devDependency, exclue par `--prod`). `docker compose run backend pnpm ...` échoue donc systématiquement (`Cannot find module '/app/pnpm'`).
+
+Pour lancer une migration (`prisma migrate deploy`) contre la base de prod, utiliser le stage intermédiaire `build` du `Dockerfile` (qui a encore pnpm + les devDependencies), depuis `urbanflow-mobility/` sur le VPS :
+
+```bash
+docker build -f apps/backend/Dockerfile --target build -t urbanflow-migrate .
+docker run --rm --env-file <(sed -E 's/^([A-Za-z_][A-Za-z0-9_]*)="(.*)"$/\1=\2/' .env.production) \
+  urbanflow-migrate pnpm --filter backend prisma migrate deploy
+```
+
+Deux pièges rencontrés en conditions réelles :
+
+- `docker run --env-file` (contrairement à `env_file:` dans `docker-compose.prod.yml`, qui gère très bien les guillemets) **ne retire pas les guillemets** autour des valeurs — `DATABASE_URL="postgresql://..."` est lu tel quel, guillemets inclus, et Prisma refuse le schéma d'URL (`P1013`). D'où le `sed` de retrait de guillemets ci-dessus avant de passer le fichier en `--env-file`.
+- `DIRECT_URL` (connexion directe, port 5432, requise par `prisma migrate` — le pooler transactionnel du port 6543 ne supporte pas les prepared statements) pointant vers le host direct Supabase (`db.<project-ref>.supabase.co`) était injoignable (`P1001`) : ce host **ne résout qu'en IPv6**, et le VPS n'a pas de connectivité IPv6. Solution : utiliser la chaîne **"Session pooler"** de Supabase (Dashboard → Project Settings → Database → Connection string → onglet "Session pooler") comme `DIRECT_URL` — elle supporte les prepared statements comme la connexion directe, mais résout en IPv4.
+
+Une fois la migration passée, reconstruire et relancer le vrai service (`--build` obligatoire, un simple `restart` ne recharge pas le code) :
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build backend
+```
 
 ### Résilience et auto-guérison
 
