@@ -79,10 +79,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             token['accessToken'] = data.accessToken;
             token['refreshToken'] = data.refreshToken;
             token['isNewUser'] = data.isNewUser;
+          } else {
+            const body = await res.text().catch(() => '');
+            console.error(`/auth/oauth/google a répondu ${res.status} — session Google sans accessToken applicatif`, body);
           }
-        } catch {
+        } catch (err) {
           // Backend injoignable : la session Google reste établie côté NextAuth
           // mais sans accessToken applicatif (comme un authorize() en échec pour Credentials).
+          console.error("Échec de l'appel à /auth/oauth/google — backend probablement injoignable", err);
         }
       } else if (user) {
         token['accessToken'] = (user as { accessToken?: string }).accessToken;
