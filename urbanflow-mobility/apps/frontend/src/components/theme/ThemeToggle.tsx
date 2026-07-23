@@ -37,6 +37,9 @@ export function ThemeToggle({ backendThemeMode }: { backendThemeMode?: ThemeMode
   const current: ThemeMode = mounted ? ((theme as ThemeMode | undefined) ?? 'system') : 'system';
 
   function select(mode: ThemeMode) {
+    // Un choix explicite prime toujours sur une synchronisation backend tardive
+    // (ex. GET /users/profile encore en vol au moment du clic).
+    syncedFromBackend.current = true;
     setTheme(mode);
     void persist({ themeMode: mode });
   }

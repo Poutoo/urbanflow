@@ -97,6 +97,32 @@ export interface UpdateProfilePayload {
   name?: string;
 }
 
+// ─── Adresses favorites ─────────────────────────────────────────────────────
+
+export interface FavoriteAddress {
+  id: string;
+  userId: string;
+  label: string;
+  address: string;
+  lat: number;
+  lng: number;
+  createdAt: string;
+}
+
+export interface CreateFavoriteAddressPayload {
+  label: string;
+  address: string;
+  lat: number;
+  lng: number;
+}
+
+export interface UpdateFavoriteAddressPayload {
+  label?: string;
+  address?: string;
+  lat?: number;
+  lng?: number;
+}
+
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
 export interface RoutePoint {

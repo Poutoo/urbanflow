@@ -8,11 +8,13 @@ import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { EcoBadge } from '@/components/profile/EcoBadge';
 import { TransportModes } from '@/components/profile/TransportModes';
 import { ToggleRow } from '@/components/profile/ToggleRow';
+import { AddFavoriteAddressForm } from '@/components/profile/AddFavoriteAddressForm';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useApiSwr } from '@/hooks/useApiSwr';
 import { useProfileMutation } from '@/hooks/useProfileMutation';
+import { useFavoriteAddresses } from '@/hooks/useFavoriteAddresses';
 import type { AuthMeResponse, PriorityMode, TransportMode, UserProfile } from '@urbanflow/types';
 
 interface InitialUser {
@@ -21,16 +23,10 @@ interface InitialUser {
   avatarUrl: string | null;
 }
 
-interface FavoriteAddress {
-  icon: string;
-  label: string;
-  address: string;
-}
-
-const FAVORITE_ADDRESSES: FavoriteAddress[] = [
-  { icon: 'ph:house-simple', label: 'Domicile', address: '12 rue des Lilas, Centre' },
-  { icon: 'ph:briefcase', label: 'Travail', address: "Parc d'activités Nord, Bât. C" },
-];
+const ADDRESS_ICON: Record<string, string> = {
+  Domicile: 'ph:house-simple',
+  Travail: 'ph:briefcase',
+};
 
 const PRIORITY_MODES: { value: PriorityMode; label: string }[] = [
   { value: 'ecological', label: 'Écologique' },
@@ -47,12 +43,15 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
   const [noStairsEnabled, setNoStairsEnabled] = useState(false);
   const [voiceGuidanceEnabled, setVoiceGuidanceEnabled] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [managingAddresses, setManagingAddresses] = useState(false);
+  const [addingAddress, setAddingAddress] = useState(false);
 
   // Badge éco-mobile à 3 paliers + total CO₂ économisé depuis l'API
   const { data: me } = useApiSwr<AuthMeResponse>('/auth/me');
   // Réglages persistés (modes, priorité, accessibilité, thème)
   const { data: profile } = useApiSwr<UserProfile>('/users/profile');
   const persist = useProfileMutation();
+  const { addresses, create: createAddress, remove: removeAddress } = useFavoriteAddresses();
 
   // Hydrate l'état local depuis le backend une seule fois au premier chargement
   // (ne doit pas écraser une modification en cours de l'utilisateur lors d'une revalidation SWR).
@@ -86,49 +85,66 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
           <h2 className="text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
             ADRESSES FAVORITES
           </h2>
-          <button
-            type="button"
-            className="text-sm font-medium text-[#1A5F7A] underline-offset-2 hover:underline dark:text-primary-content"
-          >
-            Gérer
-          </button>
+          {addresses.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setManagingAddresses((v) => !v)}
+              className="text-sm font-medium text-[#1A5F7A] underline-offset-2 hover:underline dark:text-primary-content"
+            >
+              {managingAddresses ? 'Terminer' : 'Gérer'}
+            </button>
+          )}
         </div>
         <Card padding="sm">
           <ul className="divide-y divide-gray-100 dark:divide-divider">
-            {FAVORITE_ADDRESSES.map((addr) => (
-              <li key={addr.label} className="flex items-center gap-3 py-3">
+            {addresses.map((addr) => (
+              <li key={addr.id} className="flex items-center gap-3 py-3">
                 <span
                   className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[8px] bg-gray-100 text-[#1A5F7A] dark:bg-divider/60 dark:text-primary-content"
                   aria-hidden="true"
                 >
-                  <Icon icon={addr.icon} width={18} />
+                  <Icon icon={ADDRESS_ICON[addr.label] ?? 'ph:map-pin'} width={18} />
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-[#0F1B2D] dark:text-text-main">{addr.label}</p>
                   <p className="truncate text-sm text-[#6B7280] dark:text-muted">{addr.address}</p>
                 </div>
-                <button
-                  type="button"
-                  aria-label={`Options pour ${addr.label}`}
-                  className="text-[#6B7280] dark:text-muted"
-                >
-                  ···
-                </button>
+                {managingAddresses && (
+                  <button
+                    type="button"
+                    aria-label={`Supprimer ${addr.label}`}
+                    onClick={() => void removeAddress(addr.id)}
+                    className="text-[#D64545] dark:text-red-400"
+                  >
+                    <Icon icon="ph:trash" width={18} />
+                  </button>
+                )}
               </li>
             ))}
             <li>
-              <button
-                type="button"
-                className="flex w-full items-center gap-3 py-3 text-[#1A5F7A] font-medium dark:text-primary-content"
-              >
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-[8px] border-2 border-dashed border-[#1A5F7A]/30 text-lg dark:border-primary-content/30"
-                  aria-hidden="true"
+              {addingAddress ? (
+                <AddFavoriteAddressForm
+                  onAdd={(payload) => {
+                    void createAddress(payload);
+                    setAddingAddress(false);
+                  }}
+                  onCancel={() => setAddingAddress(false)}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAddingAddress(true)}
+                  className="flex w-full items-center gap-3 py-3 text-[#1A5F7A] font-medium dark:text-primary-content"
                 >
-                  +
-                </span>
-                Ajouter une adresse
-              </button>
+                  <span
+                    className="flex h-9 w-9 items-center justify-center rounded-[8px] border-2 border-dashed border-[#1A5F7A]/30 text-lg dark:border-primary-content/30"
+                    aria-hidden="true"
+                  >
+                    +
+                  </span>
+                  Ajouter une adresse
+                </button>
+              )}
             </li>
           </ul>
         </Card>

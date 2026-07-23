@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { usePlaceSuggestions, type PlaceSuggestion } from '@/hooks/usePlaceSuggestions'
 import { useNearbyStations } from '@/hooks/useNearbyStations'
+import { useFavoriteAddresses } from '@/hooks/useFavoriteAddresses'
 
 const MapView = dynamic(
   () => import('@/components/map/MapView').then((m) => m.MapView),
@@ -34,6 +35,7 @@ export default function CartePage() {
   const { suggestions, loading, clear } = usePlaceSuggestions(
     selectedPlace ? '' : query, // stoppe les requêtes une fois un lieu sélectionné
   )
+  const { addresses: favoriteAddresses } = useFavoriteAddresses()
 
   useEffect(() => {
     const stored = localStorage.getItem(CONSENT_KEY)
@@ -192,6 +194,23 @@ export default function CartePage() {
             )}
           </div>
         </form>
+
+        {/* Sélection rapide des adresses favorites */}
+        {!showDropdown && !query && favoriteAddresses.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {favoriteAddresses.map((addr) => (
+              <button
+                key={addr.id}
+                type="button"
+                onClick={() => navigate({ name: addr.address, lat: addr.lat, lng: addr.lng, type: 'address' })}
+                className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#0F1B2D] shadow dark:bg-surface dark:text-text-main dark:shadow-none dark:border dark:border-divider"
+              >
+                <span aria-hidden="true">📍</span>
+                {addr.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Dropdown suggestions */}
         {showDropdown && (
