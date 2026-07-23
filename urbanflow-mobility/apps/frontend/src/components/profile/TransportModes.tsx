@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Badge } from '../ui/Badge';
 import type { TransportMode } from '@urbanflow/types';
 
@@ -21,6 +21,13 @@ interface TransportModesProps {
 
 export function TransportModes({ initial, onChange }: TransportModesProps) {
   const [selected, setSelected] = useState<Set<TransportMode>>(new Set(initial));
+
+  // `initial` peut changer après le montage (ex. chargement asynchrone du
+  // profil depuis le backend) — resynchronise l'état affiché dans ce cas.
+  useEffect(() => {
+    setSelected(new Set(initial));
+    // Volontaire : ne dépend que du contenu (pas de la référence `initial`) pour éviter une boucle de rendu.
+  }, [initial.join(',')]);
 
   const toggle = (mode: TransportMode) => {
     setSelected((prev) => {

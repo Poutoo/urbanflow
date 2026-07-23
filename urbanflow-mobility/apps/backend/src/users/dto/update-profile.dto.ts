@@ -23,6 +23,8 @@ class CoordinatesDto {
 
 const VALID_MODES = ['velo', 'bus', 'tram', 'metro', 'marche', 'trottinette', 'covoiturage'] as const;
 const VALID_PRIORITIES = ['fast', 'ecological', 'economic'] as const;
+const VALID_THEME_MODES = ['light', 'dark', 'system'] as const;
+type ThemeMode = (typeof VALID_THEME_MODES)[number];
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -46,7 +48,12 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsBoolean()
-  darkModeEnabled?: boolean;
+  voiceGuidanceEnabled?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(VALID_THEME_MODES)
+  themeMode?: ThemeMode;
 
   @IsOptional()
   @IsString()

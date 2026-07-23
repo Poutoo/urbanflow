@@ -1,17 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import { Icon } from '@iconify/react';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { EcoBadge } from '@/components/profile/EcoBadge';
 import { TransportModes } from '@/components/profile/TransportModes';
+import { ToggleRow } from '@/components/profile/ToggleRow';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useApiSwr } from '@/hooks/useApiSwr';
-import type { AuthMeResponse, PriorityMode, TransportMode } from '@urbanflow/types';
+import { useProfileMutation } from '@/hooks/useProfileMutation';
+import type { AuthMeResponse, PriorityMode, TransportMode, UserProfile } from '@urbanflow/types';
 
 interface InitialUser {
   name: string;
@@ -42,9 +44,27 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
   const [selectedModes, setSelectedModes] = useState<TransportMode[]>(DEFAULT_MODES);
   const [priorityMode, setPriorityMode] = useState<PriorityMode>('ecological');
   const [pmrEnabled, setPmrEnabled] = useState(false);
+  const [noStairsEnabled, setNoStairsEnabled] = useState(false);
+  const [voiceGuidanceEnabled, setVoiceGuidanceEnabled] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   // Badge éco-mobile à 3 paliers + total CO₂ économisé depuis l'API
   const { data: me } = useApiSwr<AuthMeResponse>('/auth/me');
+  // Réglages persistés (modes, priorité, accessibilité, thème)
+  const { data: profile } = useApiSwr<UserProfile>('/users/profile');
+  const persist = useProfileMutation();
+
+  // Hydrate l'état local depuis le backend une seule fois au premier chargement
+  // (ne doit pas écraser une modification en cours de l'utilisateur lors d'une revalidation SWR).
+  useEffect(() => {
+    if (!profile || hydrated) return;
+    setSelectedModes(profile.preferredModes);
+    setPriorityMode(profile.priorityMode);
+    setPmrEnabled(profile.pmrEnabled);
+    setNoStairsEnabled(profile.noStairsEnabled);
+    setVoiceGuidanceEnabled(profile.voiceGuidanceEnabled);
+    setHydrated(true);
+  }, [profile, hydrated]);
 
   return (
     <div className="flex flex-col gap-4 px-4 pb-6 pt-4">
@@ -116,7 +136,13 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
 
       {/* Modes de transport */}
       <Card>
-        <TransportModes initial={selectedModes} onChange={setSelectedModes} />
+        <TransportModes
+          initial={selectedModes}
+          onChange={(modes) => {
+            setSelectedModes(modes);
+            void persist({ preferredModes: modes });
+          }}
+        />
       </Card>
 
       {/* Priorité d'itinéraire */}
@@ -132,7 +158,10 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
                 type="button"
                 role="radio"
                 aria-checked={priorityMode === value}
-                onClick={() => setPriorityMode(value)}
+                onClick={() => {
+                  setPriorityMode(value);
+                  void persist({ priorityMode: value });
+                }}
                 className={[
                   'flex-1 py-2.5 text-sm font-medium transition-colors',
                   priorityMode === value
@@ -148,43 +177,46 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
       </section>
 
       {/* Accessibilité */}
-      <section aria-label="Accessibilité PMR">
+      <section aria-label="Accessibilité">
         <h2 className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
           ACCESSIBILITÉ
         </h2>
         <p className="mb-2 text-xs text-[#6B7280] dark:text-muted">Conformité WCAG 2.1 AA</p>
         <Card padding="sm">
-          <div className="flex items-center justify-between py-1">
-            <div className="flex items-center gap-3">
-              <span
-                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[8px] bg-gray-100 text-[#1A5F7A] dark:bg-divider/60 dark:text-primary-content"
-                aria-hidden="true"
-              >
-                <Icon icon="ph:wheelchair" width={18} />
-              </span>
-              <div>
-                <p className="font-medium text-[#0F1B2D] dark:text-text-main">Itinéraires PMR</p>
-                <p className="text-xs text-[#6B7280] dark:text-muted">Prioriser les trajets accessibles</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={pmrEnabled}
-              aria-label="Activer les itinéraires PMR"
-              onClick={() => setPmrEnabled((v) => !v)}
-              className={[
-                'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A5F7A] focus-visible:ring-offset-2 dark:focus-visible:ring-primary-content',
-                pmrEnabled ? 'bg-[#2D7D46]' : 'bg-gray-200 dark:bg-divider',
-              ].join(' ')}
-            >
-              <span
-                className={[
-                  'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-                  pmrEnabled ? 'translate-x-6' : 'translate-x-1',
-                ].join(' ')}
-              />
-            </button>
+          <div className="divide-y divide-gray-100 dark:divide-divider">
+            <ToggleRow
+              icon="ph:wheelchair"
+              label="Itinéraires PMR"
+              description="Prioriser les trajets accessibles"
+              checked={pmrEnabled}
+              onToggle={() => {
+                const next = !pmrEnabled;
+                setPmrEnabled(next);
+                void persist({ pmrEnabled: next });
+              }}
+            />
+            <ToggleRow
+              icon="ph:stairs"
+              label="Sans marches ni escaliers"
+              description="Éviter les trajets nécessitant des escaliers"
+              checked={noStairsEnabled}
+              onToggle={() => {
+                const next = !noStairsEnabled;
+                setNoStairsEnabled(next);
+                void persist({ noStairsEnabled: next });
+              }}
+            />
+            <ToggleRow
+              icon="ph:speaker-high"
+              label="Guidage vocal"
+              description="Instructions audio pendant le trajet"
+              checked={voiceGuidanceEnabled}
+              onToggle={() => {
+                const next = !voiceGuidanceEnabled;
+                setVoiceGuidanceEnabled(next);
+                void persist({ voiceGuidanceEnabled: next });
+              }}
+            />
           </div>
         </Card>
       </section>
@@ -196,7 +228,7 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
         </h2>
         <Card padding="sm">
           <div className="divide-y divide-gray-100 dark:divide-divider">
-            <ThemeToggle />
+            <ThemeToggle backendThemeMode={profile?.themeMode} />
             <Link
               href="/aide-confidentialite"
               className="flex items-center justify-between gap-3 py-2.5 font-medium text-[#0F1B2D] hover:text-[#1A5F7A] dark:text-text-main dark:hover:text-primary-content"

@@ -60,23 +60,30 @@ model Session {
   @@map("sessions")
 }
 
+enum ThemeMode {
+  light
+  dark
+  system
+}
+
 model UserProfile {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  preferredModes  String[]
-  priorityMode    String   @default("ecological")
-  pmrEnabled      Boolean  @default(false)
-  noStairsEnabled Boolean  @default(false)
-  darkModeEnabled Boolean  @default(false)
-  homeAddress     String?
-  homeCoordinates Json?
-  workAddress     String?
-  workCoordinates Json?
-  co2Goal         Float    @default(40.0)
-  badgeLevel      Int      @default(0)
-  totalCo2SavedKg Float    @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  preferredModes       String[]
+  priorityMode         String    @default("ecological")
+  pmrEnabled           Boolean   @default(false)
+  noStairsEnabled      Boolean   @default(false)
+  voiceGuidanceEnabled Boolean   @default(false)
+  themeMode            ThemeMode @default(system)
+  homeAddress          String?
+  homeCoordinates      Json?
+  workAddress          String?
+  workCoordinates      Json?
+  co2Goal              Float     @default(40.0)
+  badgeLevel           Int       @default(0)
+  totalCo2SavedKg      Float     @default(0)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

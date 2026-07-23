@@ -59,6 +59,7 @@ export interface JwtPayload {
 
 export type TransportMode = 'velo' | 'bus' | 'tram' | 'metro' | 'marche' | 'trottinette' | 'covoiturage';
 export type PriorityMode = 'fast' | 'ecological' | 'economic';
+export type ThemeMode = 'light' | 'dark' | 'system';
 
 export interface Coordinates {
   lat: number;
@@ -72,7 +73,8 @@ export interface UserProfile {
   priorityMode: PriorityMode;
   pmrEnabled: boolean;
   noStairsEnabled: boolean;
-  darkModeEnabled: boolean;
+  voiceGuidanceEnabled: boolean;
+  themeMode: ThemeMode;
   homeAddress: string | null;
   homeCoordinates: Coordinates | null;
   workAddress: string | null;
@@ -85,7 +87,8 @@ export interface UpdateProfilePayload {
   priorityMode?: PriorityMode;
   pmrEnabled?: boolean;
   noStairsEnabled?: boolean;
-  darkModeEnabled?: boolean;
+  voiceGuidanceEnabled?: boolean;
+  themeMode?: ThemeMode;
   homeAddress?: string;
   homeCoordinates?: Coordinates;
   workAddress?: string;

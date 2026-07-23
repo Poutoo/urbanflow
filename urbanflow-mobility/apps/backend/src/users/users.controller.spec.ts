@@ -12,7 +12,8 @@ const mockProfile = {
   priorityMode: 'ecological',
   pmrEnabled: false,
   noStairsEnabled: false,
-  darkModeEnabled: false,
+  voiceGuidanceEnabled: false,
+  themeMode: 'system',
   homeAddress: null,
   homeCoordinates: null,
   workAddress: null,
@@ -126,6 +127,37 @@ describe('UsersController (integration)', () => {
         .send({ priorityMode: 'unknown-mode' });
 
       expect(res.status).toBe(400);
+    });
+
+    it('retourne 400 si themeMode est invalide', async () => {
+      const res = await request(app.getHttpServer())
+        .put('/users/profile')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ themeMode: 'blue' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('retourne 400 si voiceGuidanceEnabled n\'est pas un booléen', async () => {
+      const res = await request(app.getHttpServer())
+        .put('/users/profile')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ voiceGuidanceEnabled: 'oui' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('accepte themeMode et voiceGuidanceEnabled valides', async () => {
+      const res = await request(app.getHttpServer())
+        .put('/users/profile')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ themeMode: 'dark', voiceGuidanceEnabled: true });
+
+      expect(res.status).toBe(200);
+      expect(mockUsersService.updateProfile).toHaveBeenCalledWith(
+        'user-1',
+        expect.objectContaining({ themeMode: 'dark', voiceGuidanceEnabled: true }),
+      );
     });
 
     it('accepte un body vide (tous les champs sont optionnels)', async () => {
