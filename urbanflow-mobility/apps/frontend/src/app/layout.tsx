@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { SessionProvider } from 'next-auth/react';
 import { ServiceWorkerRegister } from '@/components/pwa/ServiceWorkerRegister';
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { ThemeColorMeta } from '@/components/theme/ThemeColorMeta';
 import './globals.css';
 
 // Auto-hébergée par Next.js (next/font) plutôt qu'un @import Google Fonts :
@@ -40,7 +42,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={inter.variable}>
+    <html lang="fr" className={inter.variable} suppressHydrationWarning>
       <head>
         {/* Tuiles Leaflet (carte) — accélère la connexion dès que le tracé
             démarre, une fois la géolocalisation résolue côté client. */}
@@ -48,8 +50,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://b.basemaps.cartocdn.com" />
       </head>
       <body>
-        <ServiceWorkerRegister />
-        <SessionProvider>{children}</SessionProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <ThemeColorMeta />
+          <ServiceWorkerRegister />
+          <SessionProvider>{children}</SessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

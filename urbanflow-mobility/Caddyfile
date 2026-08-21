@@ -1,0 +1,3 @@
+api-urbanflow.poutoo.dev {
+    reverse_proxy backend:3001
+}

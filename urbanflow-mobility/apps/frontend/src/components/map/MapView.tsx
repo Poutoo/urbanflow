@@ -5,6 +5,7 @@ import { UserMarker } from './UserMarker'
 import { RouteLayer } from './RouteLayer'
 import { StationMarkers } from './StationMarkers'
 import { DestinationMarker } from './DestinationMarker'
+import { useIsDarkMode } from '@/hooks/useIsDarkMode'
 
 // Fix icônes Leaflet cassées dans Next.js (webpack renomme les assets)
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)['_getIconUrl']
@@ -50,6 +51,7 @@ export function MapView({
   stations = [],
   recommendedStationId,
 }: Props) {
+  const isDark = useIsDarkMode()
   const center: [number, number] =
     isNaN(userLat) || isNaN(userLng) ? PARIS_CENTER : [userLat, userLng]
 
@@ -67,7 +69,8 @@ export function MapView({
       attributionControl={true}
     >
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        key={isDark ? 'dark' : 'light'}
+        url={`https://{s}.basemaps.cartocdn.com/${isDark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`}
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         maxZoom={20}
       />

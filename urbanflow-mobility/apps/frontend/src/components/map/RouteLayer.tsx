@@ -1,6 +1,8 @@
 'use client'
 import { Tooltip } from 'react-leaflet'
 import { AnimatedPolyline } from './AnimatedPolyline'
+import { useIsDarkMode } from '@/hooks/useIsDarkMode'
+import { getContentColor } from '@/lib/darkColors'
 
 // Normalise les noms de modes Navitia (français, majuscules, accents) vers des clés internes
 const FRENCH_MODE_MAP: Record<string, string> = {
@@ -54,12 +56,13 @@ interface Props {
 }
 
 export function RouteLayer({ sections }: Props) {
+  const isDark = useIsDarkMode()
   return (
     <>
       {sections
         .filter((s) => s.coordinates.length >= 2)
         .map((section, i) => {
-          const color = getModeColor(section.type, section.mode)
+          const color = getContentColor(getModeColor(section.type, section.mode), isDark)
           const positions = section.coordinates.map(([lng, lat]) => [lat, lng] as [number, number])
           return (
             <AnimatedPolyline

@@ -42,11 +42,11 @@ export function ProfileHeader({ name, email, avatarUrl }: ProfileHeaderProps) {
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="truncate font-semibold text-[#0F1B2D]">{name}</p>
-        <p className="truncate text-sm text-[#6B7280]">{email}</p>
+        <p className="truncate font-semibold text-[#0F1B2D] dark:text-text-main">{name}</p>
+        <p className="truncate text-sm text-[#6B7280] dark:text-muted">{email}</p>
       </div>
 
-      <ChevronRightIcon className="flex-shrink-0 text-[#6B7280]" />
+      <ChevronRightIcon className="flex-shrink-0 text-[#6B7280] dark:text-muted" />
     </div>
   );
 }

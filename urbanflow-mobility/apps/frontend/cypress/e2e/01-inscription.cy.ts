@@ -10,6 +10,7 @@ describe('Inscription', () => {
     cy.get('input[name="name"]').type('Camille Test')
     cy.get('input[name="email"]').type(email)
     cy.get('input[name="password"]').type('MotDePasse123!')
+    cy.get('#accept-terms').check()
 
     cy.intercept('POST', '**/api/auth/register').as('register')
     cy.contains('button', 'Créer mon compte').click()
@@ -26,6 +27,7 @@ describe('Inscription', () => {
     cy.get('input[name="name"]').type('A')
     cy.get('input[name="email"]').type('pas-un-email')
     cy.get('input[name="password"]').type('court')
+    cy.get('#accept-terms').check()
     cy.contains('button', 'Créer mon compte').click()
 
     cy.contains('Le nom doit contenir au moins 2 caractères').should('be.visible')
@@ -34,6 +36,35 @@ describe('Inscription', () => {
 
     // Le formulaire est bloqué avant tout appel réseau
     cy.get('@register.all').should('have.length', 0)
+  })
+
+  it("bloque la soumission tant que la case CGU/confidentialité n'est pas cochée", () => {
+    const email = uniqueEmail('terms-gate')
+    cy.intercept('POST', '**/api/auth/register').as('register')
+
+    cy.visit('/register')
+    cy.get('input[name="name"]').type('Camille Terms')
+    cy.get('input[name="email"]').type(email)
+    cy.get('input[name="password"]').type('MotDePasse123!')
+
+    // Formulaire valide mais case non cochée : le bouton reste désactivé
+    cy.contains('button', 'Créer mon compte').should('be.disabled')
+    cy.contains('button', 'Créer mon compte').click({ force: true })
+    cy.get('@register.all').should('have.length', 0)
+
+    // Les liens CGU/confidentialité s'ouvrent dans un nouvel onglet (formulaire non perdu)
+    cy.get('label[for="accept-terms"] a[href="/cgu"]').should('have.attr', 'target', '_blank')
+    cy.get('label[for="accept-terms"] a[href="/confidentialite"]').should(
+      'have.attr',
+      'target',
+      '_blank',
+    )
+
+    cy.get('#accept-terms').check()
+    cy.contains('button', 'Créer mon compte').should('be.enabled')
+
+    cy.contains('button', 'Créer mon compte').click()
+    cy.wait('@register').its('response.statusCode').should('eq', 201)
   })
 
   it('refuse une inscription avec un email déjà utilisé (409 backend réel)', () => {
@@ -45,6 +76,7 @@ describe('Inscription', () => {
     cy.get('input[name="name"]').type('Deuxième Compte')
     cy.get('input[name="email"]').type(email)
     cy.get('input[name="password"]').type('AutreMotDePasse123!')
+    cy.get('#accept-terms').check()
 
     cy.intercept('POST', '**/api/auth/register').as('register')
     cy.contains('button', 'Créer mon compte').click()

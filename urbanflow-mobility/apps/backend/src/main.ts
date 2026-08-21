@@ -9,7 +9,7 @@ async function bootstrap() {
   app.use(helmet());
 
   app.enableCors({
-    origin: process.env['NEXTAUTH_URL'] ?? 'http://localhost:3000',
+    origin: process.env['CORS_ORIGIN'] ?? 'http://localhost:3000',
     credentials: true,
   });
 

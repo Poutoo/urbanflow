@@ -2,6 +2,8 @@
 import { Icon } from '@iconify/react'
 import type { RecommendedBikeStation } from '@urbanflow/types'
 import { SectionPill } from './SectionPill'
+import { useIsDarkMode } from '@/hooks/useIsDarkMode'
+import { getContentColor, hexToRgba } from '@/lib/darkColors'
 
 export interface RouteSection {
   type: string
@@ -79,15 +81,23 @@ interface Props {
 
 export function RouteCard({ strategy, route, isSelected, onSelect }: Props) {
   const style = STRATEGY_STYLE[strategy]
+  const isDark = useIsDarkMode()
+  // "color" sert de texte/bordure posé sur le fond de la carte : besoin de la
+  // variante éclaircie en sombre. style.color reste inchangé pour les fonds
+  // pleins + texte blanc ci-dessous (bandeau recommandé, badge stratégie) :
+  // ces derniers gardent leur propre contraste quel que soit le thème.
+  const color = getContentColor(style.color, isDark)
+  const bg = isDark ? hexToRgba(color, 0.14) : style.bg
+  const border = isDark ? hexToRgba(color, 0.4) : style.border
   const visibleSections = route.sections.filter((s) => s.type !== 'waiting' && s.type !== 'bss_put')
 
   return (
     <div
       className="overflow-hidden rounded-2xl border-2 transition-shadow"
       style={{
-        borderColor: isSelected ? style.color : style.border,
-        backgroundColor: isSelected ? style.bg : '#FFFFFF',
-        boxShadow: isSelected ? `0 4px 16px ${style.color}33` : undefined,
+        borderColor: isSelected ? color : border,
+        backgroundColor: isSelected ? bg : 'rgb(var(--color-surface))',
+        boxShadow: isSelected ? `0 4px 16px ${color}33` : undefined,
       }}
       onClick={onSelect}
     >
@@ -114,16 +124,16 @@ export function RouteCard({ strategy, route, isSelected, onSelect }: Props) {
               {style.label}
             </span>
             {route.isPmrAccessible && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
                 <Icon icon="ph:wheelchair" width={11} aria-hidden="true" />
                 PMR
               </span>
             )}
           </div>
           <div className="text-right">
-            <p className="text-base font-bold text-[#0F1B2D]">{formatDuration(route.duration)}</p>
+            <p className="text-base font-bold text-[#0F1B2D] dark:text-text-main">{formatDuration(route.duration)}</p>
             {route.arrivalTime && (
-              <p className="text-xs text-[#6B7280]">arrivée {formatTime(route.arrivalTime)}</p>
+              <p className="text-xs text-[#6B7280] dark:text-muted">arrivée {formatTime(route.arrivalTime)}</p>
             )}
           </div>
         </div>
@@ -151,20 +161,20 @@ export function RouteCard({ strategy, route, isSelected, onSelect }: Props) {
         </div>
 
         {/* CO2 */}
-        <div className="flex flex-wrap items-center gap-3 text-xs text-[#6B7280]">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-[#6B7280] dark:text-muted">
           <span className="inline-flex items-center gap-1">
             <Icon icon="ph:globe-hemisphere-west" width={13} aria-hidden="true" />
             {(route.co2Kg * 1000).toFixed(0)} g CO₂
           </span>
           {route.co2SavedKg > 0 && (
-            <span className="font-semibold text-[#2D7D46]">
+            <span className="font-semibold text-[#2D7D46] dark:text-secondary-content">
               −{(route.co2SavedKg * 1000).toFixed(0)} g vs voiture
             </span>
           )}
         </div>
 
         {route.recommendedBikeStation && (
-          <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-[#F0FDF4] px-2.5 py-1.5 text-xs font-medium text-[#15803D]">
+          <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-[#F0FDF4] px-2.5 py-1.5 text-xs font-medium text-[#15803D] dark:bg-green-500/10 dark:text-green-400">
             <Icon icon="ph:bicycle" width={14} aria-hidden="true" />
             <span>
               Vélib’ à {route.recommendedBikeStation.distanceM} m ·{' '}

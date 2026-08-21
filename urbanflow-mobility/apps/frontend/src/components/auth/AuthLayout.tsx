@@ -4,7 +4,7 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-[#F7F9FC]">
+    <div className="flex min-h-screen flex-col bg-[#F7F9FC] dark:bg-bg">
       {/* Header teal — fidèle maquette 01-connexion.png */}
       <header className="relative overflow-hidden bg-[#1A5F7A] px-6 pb-10 pt-14">
         {/* Cercle décoratif flou */}

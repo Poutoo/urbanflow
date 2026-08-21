@@ -8,8 +8,10 @@ import { CacheModule } from './cache/cache.module';
 import { RoutesModule } from './routes/routes.module';
 import { PlacesModule } from './places/places.module';
 import { Co2Module } from './co2/co2.module';
+import { HealthController } from './health/health.controller';
 
 @Module({
+  controllers: [HealthController],
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,

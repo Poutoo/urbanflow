@@ -10,7 +10,7 @@ export function ProgressBar({ percent, color, ariaLabel }: ProgressBarProps) {
 
   return (
     <div
-      className="h-2 overflow-hidden rounded-full bg-gray-100"
+      className="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-divider"
       role="progressbar"
       aria-valuenow={clamped}
       aria-valuemin={0}

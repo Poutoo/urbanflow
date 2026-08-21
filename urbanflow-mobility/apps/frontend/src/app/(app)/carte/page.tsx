@@ -8,7 +8,7 @@ import { useNearbyStations } from '@/hooks/useNearbyStations'
 
 const MapView = dynamic(
   () => import('@/components/map/MapView').then((m) => m.MapView),
-  { ssr: false, loading: () => <div className="h-full w-full animate-pulse bg-gray-200" /> },
+  { ssr: false, loading: () => <div className="h-full w-full animate-pulse bg-gray-200 dark:bg-divider" /> },
 )
 
 const PARIS_CENTER = { lat: 48.8566, lng: 2.3522 }
@@ -146,11 +146,11 @@ export default function CartePage() {
       {/* Barre de recherche + dropdown */}
       <div className="absolute left-1/2 top-4 z-[1000] w-[90%] max-w-md -translate-x-1/2">
         <form onSubmit={handleSearch}>
-          <div className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-lg">
+          <div className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-lg dark:bg-surface dark:shadow-none dark:border dark:border-divider">
             {loading ? (
-              <div className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-[#1A5F7A] border-t-transparent" />
+              <div className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-[#1A5F7A] border-t-transparent dark:border-primary-content" />
             ) : (
-              <svg className="h-5 w-5 shrink-0 text-[#6B7280]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-5 w-5 shrink-0 text-[#6B7280] dark:text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             )}
@@ -161,7 +161,7 @@ export default function CartePage() {
               onChange={(e) => handleInputChange(e.target.value)}
               onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
               placeholder="Où voulez-vous aller ?"
-              className="w-full bg-transparent text-sm text-[#0F1B2D] placeholder-[#6B7280] outline-none"
+              className="w-full bg-transparent text-sm text-[#0F1B2D] placeholder-[#6B7280] outline-none dark:text-text-main dark:placeholder-muted"
               aria-label="Destination"
               role="combobox"
               aria-autocomplete="list"
@@ -173,7 +173,7 @@ export default function CartePage() {
               <button
                 type="button"
                 onClick={() => { setQuery(''); setSelectedPlace(null); clear(); setShowDropdown(false) }}
-                className="shrink-0 text-[#6B7280] hover:text-[#0F1B2D]"
+                className="shrink-0 text-[#6B7280] hover:text-[#0F1B2D] dark:text-muted dark:hover:text-text-main"
                 aria-label="Effacer"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -199,7 +199,7 @@ export default function CartePage() {
             ref={dropdownRef}
             id="destination-suggestions"
             role="listbox"
-            className="mt-1.5 overflow-hidden rounded-2xl bg-white shadow-lg"
+            className="mt-1.5 overflow-hidden rounded-2xl bg-white shadow-lg dark:bg-surface dark:shadow-none dark:border dark:border-divider"
           >
             {suggestions.map((place, i) => (
               <button
@@ -207,12 +207,12 @@ export default function CartePage() {
                 role="option"
                 type="button"
                 onClick={() => handleSelect(place)}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-[#F7F9FC] focus:bg-[#F7F9FC] focus:outline-none"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-[#F7F9FC] focus:bg-[#F7F9FC] focus:outline-none dark:hover:bg-divider/40 dark:focus:bg-divider/40"
               >
                 <span className="text-base" aria-hidden="true">
                   {TYPE_ICON[place.type] ?? '📍'}
                 </span>
-                <span className="text-sm text-[#0F1B2D]">{place.name}</span>
+                <span className="text-sm text-[#0F1B2D] dark:text-text-main">{place.name}</span>
               </button>
             ))}
           </div>
@@ -221,7 +221,7 @@ export default function CartePage() {
 
       {/* Indicateur d'erreur géolocalisation */}
       {geo.error && consentGiven && (
-        <div className="absolute bottom-24 left-1/2 z-[1000] -translate-x-1/2 rounded-full bg-amber-100 px-4 py-2 text-sm text-amber-800 shadow">
+        <div className="absolute bottom-24 left-1/2 z-[1000] -translate-x-1/2 rounded-full bg-amber-100 px-4 py-2 text-sm text-amber-800 shadow dark:bg-amber-500/10 dark:text-amber-400 dark:shadow-none">
           Position approximative — {geo.error}
         </div>
       )}
@@ -234,14 +234,14 @@ export default function CartePage() {
           aria-labelledby="geo-modal-title"
           className="absolute inset-0 z-[2000] flex items-end justify-center bg-black/40 pb-8"
         >
-          <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+          <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl dark:bg-surface dark:shadow-none dark:border dark:border-divider">
             <div className="mb-3 flex items-center gap-3">
               <span className="text-2xl" aria-hidden="true">📍</span>
-              <h2 id="geo-modal-title" className="text-base font-bold text-[#0F1B2D]">
+              <h2 id="geo-modal-title" className="text-base font-bold text-[#0F1B2D] dark:text-text-main">
                 Autoriser la géolocalisation
               </h2>
             </div>
-            <p className="mb-5 text-sm text-[#6B7280]">
+            <p className="mb-5 text-sm text-[#6B7280] dark:text-muted">
               UrbanFlow utilise votre position GPS pour afficher les itinéraires depuis votre position actuelle.
               Vos données de localisation ne sont pas enregistrées ni partagées.
             </p>
@@ -254,7 +254,7 @@ export default function CartePage() {
               </button>
               <button
                 onClick={handleDeny}
-                className="w-full rounded-full border border-[#6B7280] py-3 text-sm font-semibold text-[#6B7280] transition hover:bg-gray-50"
+                className="w-full rounded-full border border-[#6B7280] py-3 text-sm font-semibold text-[#6B7280] transition hover:bg-gray-50 dark:border-muted dark:text-muted dark:hover:bg-divider/40"
               >
                 Refuser
               </button>

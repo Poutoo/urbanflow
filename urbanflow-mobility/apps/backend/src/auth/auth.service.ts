@@ -7,6 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
+import { OAuth2Client } from 'google-auth-library';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import type {
@@ -18,13 +19,21 @@ import type {
   TransportMode,
 } from '@urbanflow/types';
 
+export interface OAuthLoginResponse extends AuthResponse {
+  isNewUser: boolean;
+}
+
 @Injectable()
 export class AuthService {
+  private readonly googleClient: OAuth2Client;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
-  ) {}
+  ) {
+    this.googleClient = new OAuth2Client(this.config.getOrThrow<string>('GOOGLE_CLIENT_ID'));
+  }
 
   async register(dto: RegisterDto, userAgent?: string, ipAddress?: string): Promise<AuthResponse> {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
@@ -37,6 +46,10 @@ export class AuthService {
         email: dto.email,
         name: dto.name ?? null,
         passwordHash,
+        // La case CGU/confidentialité est obligatoire côté formulaire d'inscription
+        // (frontend) avant l'appel à cet endpoint — cf. section 8.4 du dossier de
+        // certification (preuve de consentement, principe d'accountability RGPD).
+        termsAcceptedAt: new Date(),
         profile: {
           create: {
             preferredModes: ['velo', 'bus', 'tram'],
@@ -47,6 +60,81 @@ export class AuthService {
     });
 
     return this.generateTokenPair(user, userAgent, ipAddress);
+  }
+
+  async loginWithGoogle(
+    idToken: string,
+    userAgent?: string,
+    ipAddress?: string,
+  ): Promise<OAuthLoginResponse> {
+    const ticket = await this.googleClient.verifyIdToken({
+      idToken,
+      audience: this.config.getOrThrow<string>('GOOGLE_CLIENT_ID'),
+    }).catch(() => {
+      throw new UnauthorizedException('Jeton Google invalide');
+    });
+    const payload = ticket.getPayload();
+
+    if (!payload?.email || !payload.email_verified || !payload.sub) {
+      throw new UnauthorizedException('Jeton Google invalide');
+    }
+
+    const existingAccount = await this.prisma.account.findUnique({
+      where: {
+        provider_providerAccountId: { provider: 'google', providerAccountId: payload.sub },
+      },
+      include: { user: true },
+    });
+
+    if (existingAccount) {
+      const tokens = await this.generateTokenPair(existingAccount.user, userAgent, ipAddress);
+      return { ...tokens, isNewUser: false };
+    }
+
+    const existingUserByEmail = await this.prisma.user.findUnique({ where: { email: payload.email } });
+
+    if (existingUserByEmail) {
+      await this.prisma.account.create({
+        data: {
+          userId: existingUserByEmail.id,
+          provider: 'google',
+          providerAccountId: payload.sub,
+        },
+      });
+      const tokens = await this.generateTokenPair(existingUserByEmail, userAgent, ipAddress);
+      return { ...tokens, isNewUser: false };
+    }
+
+    const newUser = await this.prisma.user.create({
+      data: {
+        email: payload.email,
+        name: payload.name ?? null,
+        avatarUrl: payload.picture ?? null,
+        // Pas de consentement CGU/confidentialité au moment de la création via Google
+        // (contrairement au formulaire d'inscription) : recueilli juste après, sur
+        // l'écran d'accueil dédié post-callback OAuth. Voir acceptTerms().
+        termsAcceptedAt: null,
+        accounts: {
+          create: { provider: 'google', providerAccountId: payload.sub },
+        },
+        profile: {
+          create: {
+            preferredModes: ['velo', 'bus', 'tram'],
+            priorityMode: 'ecological',
+          },
+        },
+      },
+    });
+
+    const tokens = await this.generateTokenPair(newUser, userAgent, ipAddress);
+    return { ...tokens, isNewUser: true };
+  }
+
+  async acceptTerms(userId: string): Promise<void> {
+    await this.prisma.user.updateMany({
+      where: { id: userId, termsAcceptedAt: null },
+      data: { termsAcceptedAt: new Date() },
+    });
   }
 
   async validateUser(email: string, password: string): Promise<AuthUser | null> {
