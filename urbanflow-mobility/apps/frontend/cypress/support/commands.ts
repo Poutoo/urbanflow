@@ -20,7 +20,7 @@ Cypress.Commands.add('apiRegister', (email: string, password: string, name = 'Ut
   return cy.request({
     method: 'POST',
     url: `${API_URL}/auth/register`,
-    body: { email, password, name },
+    body: { email, password, name, acceptTerms: true },
     failOnStatusCode: false,
   })
 })

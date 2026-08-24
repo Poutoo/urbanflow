@@ -46,9 +46,9 @@ export class AuthService {
         email: dto.email,
         name: dto.name ?? null,
         passwordHash,
-        // La case CGU/confidentialité est obligatoire côté formulaire d'inscription
-        // (frontend) avant l'appel à cet endpoint — cf. section 8.4 du dossier de
-        // certification (preuve de consentement, principe d'accountability RGPD).
+        // acceptTerms est validé côté serveur par RegisterDto (@IsBoolean + @Equals(true)) —
+        // cf. section 8.4 du dossier de certification (preuve de consentement, principe
+        // d'accountability RGPD). On arrive ici seulement si dto.acceptTerms === true.
         termsAcceptedAt: new Date(),
         profile: {
           create: {

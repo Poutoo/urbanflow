@@ -117,7 +117,7 @@ export class RoutesService {
     const result: SearchRoutesResult = {
       fast: this.pickFastest([...enriched]),
       ecological,
-      economic: this.pickCheapest([...enriched]),
+      economic: this.pickFewestTransfers([...enriched]),
       nearbyBikeStations: nearbyStations,
     }
 
@@ -337,7 +337,7 @@ export class RoutesService {
     return [...pool].sort((a, b) => score(a) - score(b))[0] ?? null
   }
 
-  private pickCheapest(journeys: RouteResult[]): RouteResult | null {
+  private pickFewestTransfers(journeys: RouteResult[]): RouteResult | null {
     return journeys.sort((a, b) => a.sections.length - b.sections.length)[0] ?? null
   }
 

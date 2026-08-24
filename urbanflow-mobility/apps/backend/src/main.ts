@@ -1,7 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+
+const logger = new Logger('Bootstrap');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -25,7 +27,7 @@ async function bootstrap() {
 
   const port = process.env['PORT'] ?? 3001;
   await app.listen(port);
-  console.log(`Backend running on http://localhost:${port}/api`);
+  logger.log(`Backend démarré sur le port ${port} (préfixe /api)`);
 }
 
 bootstrap();
