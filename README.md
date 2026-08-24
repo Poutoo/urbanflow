@@ -155,14 +155,15 @@ Résultats mesurés le 2026-07-15 sur `main` (commit `ba1560d`) :
 |---|---|---|---|
 | Backend (Jest) | 137 tests / 14 suites — tous passent | 77,12 % | 60 % — respecté |
 | Frontend (Jest) | 9 tests / 3 suites — tous passent | 9,16 % | 60 % — **non respecté**, le run échoue sur le seuil |
-| Frontend (Cypress) | 4 specs présentes | — | non ré-exécutées lors de cette vérification |
+| Frontend (Cypress) | 5 specs présentes | — | non ré-exécutées lors de cette vérification |
 
-**Limite connue et assumée** : la couverture unitaire frontend est très faible — la quasi-totalité des composants (carte, cartes d'itinéraires, badge CO₂, dashboard) sont à 0 % de couverture Jest. La stratégie de test reporte la validation de ces flux sur les **4 specs Cypress** (`apps/frontend/cypress/e2e/`) :
+**Limite connue et assumée** : la couverture unitaire frontend est très faible — la quasi-totalité des composants (carte, cartes d'itinéraires, badge CO₂, dashboard) sont à 0 % de couverture Jest. La stratégie de test reporte la validation de ces flux sur les **5 specs Cypress** (`apps/frontend/cypress/e2e/`) :
 
 - `01-inscription.cy.ts` — inscription email/password + parcours Google mocké
 - `02-connexion.cy.ts` — connexion
 - `03-recherche-itineraire.cy.ts` — recherche multimodale + sélection de stratégie
 - `04-co2-badge.cy.ts` — enregistrement d'un trajet, dashboard CO₂ et badge éco-mobile
+- `05-dark-mode.cy.ts` — bascule et persistance du mode sombre
 
 Ces specs n'ont pas été rejouées dans le cadre de cette vérification (elles nécessitent un backend actif, une base de données et des clés d'API tierces) — à relancer via `pnpm --filter frontend test:e2e` pour obtenir un rapport pass/fail à jour.
 
@@ -174,7 +175,7 @@ Ces specs n'ont pas été rejouées dans le cadre de cette vérification (elles 
 - **Backend** : conteneurisé (`apps/backend/Dockerfile`, build multi-stage Node 20) et exécuté sur un VPS via `docker-compose.prod.yml` (services `backend` + `redis`), derrière **Caddy** qui gère le reverse proxy et le TLS automatique sur `api-urbanflow.poutoo.dev` (`Caddyfile` à la racine du monorepo)
 - **Base de données** : Supabase PostgreSQL 16 + PostGIS (projet `urbanflow`, région `eu-west-3`) — connexion poolée (PgBouncer, port 6543) au runtime, connexion directe (port 5432) réservée aux migrations Prisma
 
-Il n'existe pas de dossier `deploy/` séparé : toute la configuration de production (`Dockerfile`, `docker-compose.prod.yml`, `Caddyfile`) vit à la racine de `urbanflow-mobility/`.
+La configuration de production applicative (`Dockerfile`, `docker-compose.prod.yml`, `Caddyfile`) vit à la racine de `urbanflow-mobility/`, pas dans un dossier `deploy/` séparé. Un dossier `deploy/security/` existe à la racine du dépôt, mais il porte la configuration de sécurité du déploiement, pas la configuration applicative elle-même.
 
 ### Migrations Prisma en production
 

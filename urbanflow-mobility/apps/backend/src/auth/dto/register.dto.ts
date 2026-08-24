@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, MaxLength, IsOptional } from 'class-validator';
+import { IsBoolean, IsEmail, IsString, MinLength, MaxLength, IsOptional, Equals } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail({}, { message: 'Adresse email invalide' })
@@ -13,4 +13,8 @@ export class RegisterDto {
   @IsString()
   @MaxLength(100)
   name?: string;
+
+  @IsBoolean({ message: 'acceptTerms doit être un booléen' })
+  @Equals(true, { message: "Vous devez accepter les conditions d'utilisation et la politique de confidentialité" })
+  acceptTerms!: boolean;
 }

@@ -346,3 +346,62 @@ describe('RoutesService', () => {
     expect(result.economic).toBeNull()
   })
 })
+
+// Non-regression du bug corrige par le commit 60e55a0 : `sections.map(this.toNavitiaSection)`
+// perdait le `this` du callback, et Navitia ne fournit pas `length` a la racine des
+// sections `public_transport` (seulement `geojson.coordinates`) → CO2 toujours a 0.
+// Co2Service est mocke dans la suite ci-dessus, donc le vrai calcul n'y est jamais exerce :
+// ce bloc utilise le vrai Co2Service pour reproduire le bug si jamais il revenait.
+describe('RoutesService — integration avec le vrai Co2Service (non-regression bug 60e55a0)', () => {
+  let service: RoutesService
+  let navitiaGet: jest.Mock
+
+  beforeEach(async () => {
+    navitiaGet = jest.fn().mockResolvedValue([
+      {
+        duration: 900,
+        departure_date_time: '20260615T083000',
+        arrival_date_time: '20260615T084500',
+        distances: { total: 0 }, // absent/nul, comme souvent chez Navitia
+        sections: [
+          {
+            type: 'public_transport',
+            display_informations: { physical_mode: 'Metro', commercial_mode: 'Metro', label: 'M1' },
+            duration: 900,
+            // Pas de `length` a la racine : uniquement geojson.coordinates, comme
+            // Navitia le fait reellement pour les sections public_transport.
+            geojson: {
+              coordinates: [
+                [2.35, 48.85],
+                [2.37, 48.87],
+              ],
+            },
+            from: { stop_point: { name: 'Depart' } },
+            to: { stop_point: { name: 'Arrivee' } },
+          },
+        ],
+      },
+    ])
+
+    const module = await Test.createTestingModule({
+      providers: [
+        RoutesService,
+        Co2Service,
+        { provide: NavitiaService, useValue: { getJourneys: navitiaGet } },
+        { provide: GbfsService, useValue: { getNearbyStations: jest.fn().mockResolvedValue([]) } },
+        { provide: GeoveloService, useValue: { getBikeRoute: jest.fn().mockResolvedValue(null) } },
+        {
+          provide: CacheService,
+          useValue: { get: jest.fn().mockResolvedValue(null), set: jest.fn().mockResolvedValue(undefined) },
+        },
+      ],
+    }).compile()
+
+    service = module.get(RoutesService)
+  })
+
+  it('calcule un CO2 non nul pour une section public_transport sans length a la racine', async () => {
+    const result = await service.searchRoutes(DTO)
+    expect(result.fast?.co2Kg).toBeGreaterThan(0)
+  })
+})

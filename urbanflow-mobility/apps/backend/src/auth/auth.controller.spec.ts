@@ -59,7 +59,7 @@ describe('AuthController (integration)', () => {
     it('retourne 201 avec des tokens valides', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/register')
-        .send({ email: 'new@example.com', password: 'password123' });
+        .send({ email: 'new@example.com', password: 'password123', acceptTerms: true });
 
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('accessToken');
@@ -69,7 +69,7 @@ describe('AuthController (integration)', () => {
     it('retourne 400 si email invalide', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/register')
-        .send({ email: 'not-an-email', password: 'password123' });
+        .send({ email: 'not-an-email', password: 'password123', acceptTerms: true });
 
       expect(res.status).toBe(400);
     });
@@ -77,7 +77,23 @@ describe('AuthController (integration)', () => {
     it('retourne 400 si mot de passe trop court', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/register')
-        .send({ email: 'test@example.com', password: '123' });
+        .send({ email: 'test@example.com', password: '123', acceptTerms: true });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('retourne 400 si acceptTerms est absent', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ email: 'test@example.com', password: 'password123' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('retourne 400 si acceptTerms est false', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ email: 'test@example.com', password: 'password123', acceptTerms: false });
 
       expect(res.status).toBe(400);
     });

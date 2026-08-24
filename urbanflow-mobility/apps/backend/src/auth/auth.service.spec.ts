@@ -89,7 +89,11 @@ describe('AuthService', () => {
       mockPrisma.user.create.mockResolvedValue(mockUser);
       mockPrisma.session.create.mockResolvedValue(mockSession);
 
-      const result = await service.register({ email: 'test@example.com', password: 'password123' });
+      const result = await service.register({
+        email: 'test@example.com',
+        password: 'password123',
+        acceptTerms: true,
+      });
 
       expect(result.accessToken).toBe('signed-token');
       expect(result.refreshToken).toBe('signed-token');
@@ -101,7 +105,7 @@ describe('AuthService', () => {
       mockPrisma.user.findUnique.mockResolvedValue(mockUser);
 
       await expect(
-        service.register({ email: 'test@example.com', password: 'password123' }),
+        service.register({ email: 'test@example.com', password: 'password123', acceptTerms: true }),
       ).rejects.toThrow(ConflictException);
 
       expect(mockPrisma.user.create).not.toHaveBeenCalled();
@@ -113,7 +117,7 @@ describe('AuthService', () => {
       mockPrisma.session.create.mockResolvedValue(mockSession);
 
       const hashSpy = jest.spyOn(argon2, 'hash');
-      await service.register({ email: 'new@example.com', password: 'password123' });
+      await service.register({ email: 'new@example.com', password: 'password123', acceptTerms: true });
 
       expect(hashSpy).toHaveBeenCalledWith('password123');
     });
