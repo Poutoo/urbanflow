@@ -3,7 +3,8 @@
 **Date de l'audit :** 2026-08-28
 **Périmètre :** dépôt `urbanflow-mobility` (monorepo pnpm/Turborepo), frontend Next.js (Vercel) + backend NestJS/Prisma (VPS Docker), base de données PostgreSQL hébergée sur Supabase.
 **Méthode :** revue statique du code source, lecture de la configuration de déploiement (Dockerfile, Caddyfile, CI), interrogation directe du projet Supabase réel via l'API Advisor (RLS), et lecture de la configuration Vercel réelle (protections de déploiement). `pnpm audit` exécuté sur les dépendances de production du monorepo.
-**Aucun correctif n'a été appliqué.** Ce document liste les constats et propose des correctifs à valider et appliquer par l'équipe.
+
+**Mise à jour du 2026-08-28 (suite à validation) :** la plupart des correctifs proposés ont été appliqués sur la branche `fix/audit-security` — build, lint et suite de tests complète (146 tests backend, 9 tests frontend) revalidés après coup, aucune régression constatée. Le statut de chaque point est indiqué dans le récapitulatif et dans sa section dédiée ci-dessous. RLS a été activée côté Supabase par l'équipe (confirmé en re-interrogeant l'Advisor : passage de `ERROR — rls_disabled_in_public` à `INFO — rls_enabled_no_policy`, deny-by-default, comportement attendu).
 
 ---
 
@@ -22,23 +23,23 @@ Le reste de ce rapport s'appuie sur le code et l'infrastructure **réels**.
 
 ## Récapitulatif par sévérité
 
-| ID | Titre | Sévérité |
-|----|-------|----------|
-| CRIT-01 | RLS désactivée sur toutes les tables Supabase exposées publiquement (vérifié en direct) | **Critique** |
-| CRIT-02 | `next-auth`/`@auth/core` : CVE critiques activement exploitables (fail-open, bypass email) | **Critique** |
-| CRIT-03 | `next@14.2.18` : CVE critique de bypass d'autorisation Middleware | **Critique** |
-| HIGH-01 | Rate limiting configuré mais **jamais appliqué** (ThrottlerGuard non enregistré) | Élevée |
-| HIGH-02 | Refresh tokens stockés **en clair** en base | Élevée |
-| HIGH-03 | Aucun header de sécurité HTTP sur le frontend (CSP, HSTS, X-Frame-Options, etc.) | Élevée |
-| HIGH-04 | Dépendances backend vulnérables (multer, lodash, form-data, axios) | Élevée |
-| MED-01 | `POST /co2/record` accepte des valeurs de CO₂ non recalculées côté serveur (falsification de score possible) | Moyenne |
-| MED-02 | `GET /places` public, non authentifié et non limité en débit (épuisement de quota API payante) | Moyenne |
-| MED-03 | Stratégie JWT sans restriction explicite d'algorithme | Moyenne |
-| MED-04 | Access token backend exposé au JS client via `useSession()` | Moyenne |
-| LOW-01 | Énumération d'emails via `POST /auth/register` (409) | Faible |
-| LOW-02 | `LoginDto.password` sans longueur maximale | Faible |
-| LOW-03 | `withCredentials: true` inutile sur le client axios frontend | Faible |
-| INFO | Points vérifiés **sans faille** (à noter pour ne pas les ré-auditer) | — |
+| ID | Titre | Sévérité | Statut |
+|----|-------|----------|--------|
+| CRIT-01 | RLS désactivée sur toutes les tables Supabase exposées publiquement (vérifié en direct) | **Critique** | ✅ Corrigé (par l'équipe côté Supabase, revérifié) |
+| CRIT-02 | `next-auth`/`@auth/core` : CVE critiques activement exploitables (fail-open, bypass email) | **Critique** | ✅ Corrigé (`5.0.0-beta.32`) |
+| CRIT-03 | `next@14.2.18` : CVE critique de bypass d'autorisation Middleware | **Critique** | ⚠️ Partiellement corrigé (`14.2.35`) — voir note |
+| HIGH-01 | Rate limiting configuré mais **jamais appliqué** (ThrottlerGuard non enregistré) | Élevée | ✅ Corrigé |
+| HIGH-02 | Refresh tokens stockés **en clair** en base | Élevée | ✅ Corrigé (hash SHA-256) |
+| HIGH-03 | Aucun header de sécurité HTTP sur le frontend (CSP, HSTS, X-Frame-Options, etc.) | Élevée | ✅ Corrigé — CSP à tester manuellement (voir vérifications finales) |
+| HIGH-04 | Dépendances backend vulnérables (multer, lodash, form-data, axios) | Élevée | ✅ Corrigé (overrides pnpm + bump axios) |
+| MED-01 | `POST /co2/record` accepte des valeurs de CO₂ non recalculées côté serveur (falsification de score possible) | Moyenne | ⚠️ Atténué (bornes ajoutées) — recalcul serveur non fait, voir note |
+| MED-02 | `GET /places` public, non authentifié et non limité en débit (épuisement de quota API payante) | Moyenne | ✅ Corrigé (throttling ajouté) |
+| MED-03 | Stratégie JWT sans restriction explicite d'algorithme | Moyenne | ✅ Corrigé |
+| MED-04 | Access token backend exposé au JS client via `useSession()` | Moyenne | ⚠️ Atténué par la CSP (HIGH-03) — refonte architecturale non faite, voir note |
+| LOW-01 | Énumération d'emails via `POST /auth/register` (409) | Faible | ⏭️ Non corrigé (arbitrage produit, voir note) |
+| LOW-02 | `LoginDto.password` sans longueur maximale | Faible | ✅ Corrigé |
+| LOW-03 | `withCredentials: true` inutile sur le client axios frontend | Faible | ✅ Corrigé |
+| INFO | Points vérifiés **sans faille** (à noter pour ne pas les ré-auditer) | — | — |
 
 ---
 
@@ -84,6 +85,8 @@ Ne pas ajouter de policy (deny-by-default) : c'est le comportement voulu puisque
 
 **Fichiers concernés :** infrastructure Supabase (hors dépôt) ; `urbanflow-mobility/apps/backend/prisma/schema.prisma` (documente les tables).
 
+> **✅ Statut : corrigé côté Supabase par l'équipe.** Revérifié en re-interrogeant l'Advisor de sécurité : les 7 tables affichent désormais `rls_enabled_no_policy` (niveau `INFO`, deny-by-default) au lieu de `rls_disabled_in_public` (niveau `ERROR`). Aucune policy n'a été ajoutée, ce qui est le comportement voulu ici. Le reste de l'application (Prisma) continue de fonctionner normalement (build, lint et 146 tests backend revalidés après coup).
+
 ---
 
 ### CRIT-02 — `next-auth` / `@auth/core` : CVE critiques dans la version installée
@@ -105,6 +108,8 @@ Vérifier ensuite que `@auth/core` résolu est bien `>=0.41.3` (dépendance tran
 
 **Fichiers concernés :** `urbanflow-mobility/apps/frontend/package.json`, `pnpm-lock.yaml`.
 
+> **✅ Statut : corrigé.** `next-auth` porté à `5.0.0-beta.32` (dernière beta publiée), qui corrige exactement les CVE listées. Build (`next build`), lint et 9 tests frontend revalidés avec succès après la montée de version.
+
 ---
 
 ### CRIT-03 — `next@14.2.18` : CVE critique de bypass d'autorisation Middleware
@@ -123,6 +128,8 @@ pnpm add next@^14.2.35   # ou upgrade vers Next 15 si le projet est prêt pour c
 Tester le build (`pnpm turbo build`) et les tests E2E Cypress après montée de version.
 
 **Fichiers concernés :** `urbanflow-mobility/apps/frontend/package.json`, `pnpm-lock.yaml`.
+
+> **⚠️ Statut : partiellement corrigé.** `next` porté à `14.2.35` (dernière version stable de la branche 14.x) : ceci corrige la CVE critique de bypass Middleware ainsi que plusieurs CVE "high" du `pnpm audit` (DoS Server Components notamment). **Non fait, à décider par l'équipe :** plusieurs CVE "high" restantes (SSRF via rewrites, SSRF WebSocket upgrade, DoS Server Actions, bypass Middleware/i18n Pages Router) n'ont de correctif que sur la branche **Next 15.5.21+** — aucun backport n'existe sur la 14.x. Une migration vers Next 15 est un changement majeur (breaking changes App Router probables) que je n'ai pas tenté ici, faute de pouvoir tester manuellement le rendu dans un navigateur réel après une telle migration — risque de casse trop élevé pour l'appliquer à l'aveugle. Recommandation : planifier cette migration comme un chantier dédié, avec test manuel complet (carte Leaflet, PWA, flux OAuth) avant mise en prod.
 
 ---
 
@@ -166,6 +173,8 @@ Après activation, valider que le throttler nommé `default` (60 req/60s) ne blo
 
 **Fichiers concernés :** `urbanflow-mobility/apps/backend/src/app.module.ts`.
 
+> **✅ Statut : corrigé.** `ThrottlerGuard` enregistré via `APP_GUARD` dans `app.module.ts`. Les 146 tests backend (dont les tests d'intégration `co2.controller.spec.ts`) passent toujours après coup — aucun test n'a été bloqué par le throttling par défaut.
+
 ---
 
 ### HIGH-02 — Refresh tokens stockés en clair en base
@@ -196,6 +205,8 @@ const session = await this.prisma.session.findUnique({
 Migration Prisma nécessaire (colonne déjà `String`, pas de changement de type, mais les sessions existantes en base deviendront invalides après déploiement — prévoir une invalidation/déconnexion globale ou un correctif à froid).
 
 **Fichiers concernés :** `urbanflow-mobility/apps/backend/src/auth/auth.service.ts`, `urbanflow-mobility/apps/backend/prisma/schema.prisma` (aucun changement de schéma nécessaire, seulement de la logique applicative).
+
+> **✅ Statut : corrigé.** Un helper `hashToken()` (SHA-256) a été ajouté ; `generateTokenPair()`, `refreshToken()` et `logout()` stockent/recherchent désormais le hash, jamais la valeur brute. **⚠️ Effet de bord attendu à connaître avant déploiement :** les sessions déjà en base ont leur `refreshToken` stocké en clair (ancien format) — après déploiement, ces refresh tokens existants ne correspondront plus à aucun hash et **tous les utilisateurs actuellement connectés seront déconnectés** (ils devront se reconnecter). C'est un effet secondaire acceptable et même souhaitable (invalide aussi tout token potentiellement déjà exposé), mais à communiquer avant la mise en prod plutôt qu'à découvrir en support utilisateur.
 
 ---
 
@@ -241,6 +252,8 @@ module.exports = withPWA(nextConfig);
 
 **Fichiers concernés :** `urbanflow-mobility/apps/frontend/next.config.js`.
 
+> **✅ Statut : corrigé, mais CSP à valider manuellement.** Headers ajoutés via `headers()` dans `next.config.js` (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, HSTS, et une CSP appliquée **uniquement en production** — désactivée en dev pour ne pas casser le hot-reload webpack/HMR). `next build` a réussi avec cette config. La CSP autorise explicitement `https://lh3.googleusercontent.com` (avatars Google), les tuiles CartoDB, Google Fonts, et `form-action` vers `accounts.google.com` pour le flux OAuth. **Elle n'a pas pu être testée en conditions réelles dans un navigateur** (pas d'environnement de preview déployé disponible ici) — c'est le point n°1 de la section "Vérifications manuelles" en fin de rapport, à faire impérativement avant de considérer ce correctif définitif : tester le flux de connexion Google, l'affichage de la carte Leaflet et l'installation du Service Worker PWA une fois déployé, la CSP pouvant les bloquer silencieusement si une directive manque.
+
 ---
 
 ### HIGH-04 — Dépendances backend avec CVE de sévérité haute
@@ -267,6 +280,8 @@ Si une mise à jour directe ne résout pas la version transitive, utiliser le ch
 **Note sur le reste du rapport `pnpm audit` :** 84 vulnérabilités au total (4 critiques, 37 hautes, 36 modérées, 7 faibles) sur les dépendances de production. La majorité des entrées "high"/"moderate" restantes concernent la **chaîne d'outillage de build** de `next-pwa` (`webpack`, `postcss`, `terser-webpack-plugin`, `brace-expansion`, `nanoid`, `serialize-javascript` — tous utilisés uniquement au moment du `next build`, jamais exécutés en runtime exposé). Elles méritent une mise à jour de routine mais sont **moins urgentes** que celles listées ci-dessus qui touchent du code exécuté en production (next, next-auth, axios, multer, lodash, form-data). Rapport JSON complet disponible sur demande (non joint ici pour ne pas alourdir ce document).
 
 **Fichiers concernés :** `urbanflow-mobility/pnpm-lock.yaml`, `urbanflow-mobility/apps/backend/package.json`.
+
+> **✅ Statut : corrigé.** `axios` porté à `^1.18.0` (backend et frontend) ; `multer >=2.1.1`, `lodash >=4.18.0`, `form-data >=4.0.6` forcés via `pnpm.overrides` dans le `package.json` racine (ces trois paquets sont transitifs, pas de dépendance directe à bumper). `pnpm audit --prod` repasse de **84 vulnérabilités (4 critiques / 37 hautes)** à **57 vulnérabilités (0 critique / 26 hautes)** ; les hautes restantes sont soit liées à `next` 15-only (voir note CRIT-03), soit à la chaîne de build `next-pwa`/webpack (non exécutée en runtime, cf. note initiale de cette section).
 
 ---
 
@@ -295,6 +310,8 @@ Rejouable indéfiniment (voir aussi HIGH-01 : aucun rate limiting sur ce endpoin
 
 **Fichiers concernés :** `urbanflow-mobility/apps/backend/src/co2/dto/record-journey.dto.ts`, `urbanflow-mobility/apps/backend/src/co2/co2-dashboard.service.ts`.
 
+> **⚠️ Statut : atténué, pas résolu en profondeur.** J'ai appliqué l'option pragmatique (bornes défensives : `@Max(200)` sur `co2SavedKg`/`co2EmittedKg`, `@Max(500)` sur `distanceKm`, `@Max(1440)` sur `durationMin`) — ça limite l'ampleur d'une falsification à des valeurs plausibles au lieu d'un nombre arbitraire, sans rien casser (146 tests backend toujours au vert, y compris les cas `co2SavedKg: 0` et `co2SavedKg: -1` déjà testés). **Non fait délibérément :** l'option robuste (recalcul/signature serveur du CO₂ au moment de `POST /routes/search`, `POST /co2/record` ne prenant plus qu'un identifiant d'itinéraire) change le contrat d'API entre frontend et backend — ça touche `RoutesService`, `RoutesController`, le hook frontend qui appelle `/co2/record`, et nécessite un choix de design (TTL du cache d'itinéraire, gestion du cas où l'itinéraire n'est plus en cache). C'est un changement plus structurant que je n'ai pas voulu faire sans validation explicite de votre part sur l'approche.
+
 ---
 
 ### MED-02 — `GET /places` public, sans authentification ni rate limiting
@@ -306,6 +323,8 @@ Rejouable indéfiniment (voir aussi HIGH-01 : aucun rate limiting sur ce endpoin
 **Correctif proposé :** ajouter au minimum un throttling dédié (`@Throttle({ default: { ttl: 60_000, limit: 20 } })`) sur `PlacesController` — cela suppose HIGH-01 corrigé au préalable (garde globale enregistrée) pour être effectif. Évaluer aussi si l'auto-complétion de lieux doit réellement rester accessible sans compte (probable, pour l'UX de recherche avant connexion) — dans ce cas le rate limiting par IP est la protection appropriée plutôt qu'un `JwtAuthGuard`.
 
 **Fichiers concernés :** `urbanflow-mobility/apps/backend/src/places/places.controller.ts`.
+
+> **✅ Statut : corrigé.** `@Throttle({ default: { ttl: 60_000, limit: 20 } })` ajouté sur `PlacesController`, effectif maintenant que `ThrottlerGuard` est enregistré globalement (HIGH-01). Le endpoint reste volontairement accessible sans compte (auto-complétion utilisable avant connexion), seule la limite de débit a été ajoutée. Limite de 20 req/min à ajuster si l'usage réel de l'autocomplétion s'avère plus intense.
 
 ---
 
@@ -325,6 +344,8 @@ super({
 
 **Fichiers concernés :** `urbanflow-mobility/apps/backend/src/auth/strategies/jwt.strategy.ts`.
 
+> **✅ Statut : corrigé.** `algorithms: ['HS256']` ajouté à la config `passport-jwt`.
+
 ---
 
 ### MED-04 — Access token backend exposé au JavaScript client via `useSession()`
@@ -341,6 +362,8 @@ super({
 
 **Fichiers concernés :** `urbanflow-mobility/apps/frontend/src/lib/auth.ts`, `urbanflow-mobility/apps/frontend/src/hooks/useApiSwr.ts`.
 
+> **⚠️ Statut : atténué via HIGH-03, refonte non faite.** La CSP ajoutée (HIGH-03) est la mitigation court terme recommandée et elle est en place. Le pattern BFF proposé en mitigation moyen terme est un changement d'architecture (déplacer tous les appels backend derrière des routes API Next.js server-side) que je n'ai pas fait : il touche `useApiSwr`, tous les appels `fetch` authentifiés du frontend (`itineraires/page.tsx`, `BienvenueGoogleClient.tsx`, etc.) et change le modèle de session — trop structurant pour l'inclure dans ce passage de correctifs sans validation préalable de l'approche.
+
 ---
 
 ## FAIBLE
@@ -352,6 +375,8 @@ super({
 **Correctif proposé :** compromis UX/sécurité à trancher par l'équipe — soit accepter ce risque mineur (comportement standard sur beaucoup de sites grand public), soit retourner un message générique et envoyer un email "un compte existe déjà" à l'adresse fournie plutôt qu'une erreur synchrone (nécessite un service d'envoi d'email, actuellement absent du projet).
 
 **Fichiers concernés :** `urbanflow-mobility/apps/backend/src/auth/auth.service.ts`.
+
+> **⏭️ Statut : non corrigé, délibérément.** C'est un arbitrage produit/UX, pas un simple correctif technique — la solution propre nécessite un service d'envoi d'email qui n'existe pas dans le projet actuellement. Je n'ai pas modifié le comportement pour ne pas dégrader l'UX (message d'erreur générique moins clair) sans validation explicite de votre part sur ce compromis.
 
 ---
 
@@ -369,6 +394,8 @@ password!: string;
 
 **Fichiers concernés :** `urbanflow-mobility/apps/backend/src/auth/dto/login.dto.ts`.
 
+> **✅ Statut : corrigé.**
+
 ---
 
 ### LOW-03 — `withCredentials: true` inutile sur le client axios frontend
@@ -378,6 +405,8 @@ password!: string;
 **Correctif proposé :** retirer `withCredentials: true` de `apps/frontend/src/lib/api.ts`, sauf si une évolution future prévoit explicitement de l'authentification par cookie.
 
 **Fichiers concernés :** `urbanflow-mobility/apps/frontend/src/lib/api.ts`.
+
+> **✅ Statut : corrigé.** `withCredentials: true` retiré. Build et tests frontend toujours au vert.
 
 ---
 

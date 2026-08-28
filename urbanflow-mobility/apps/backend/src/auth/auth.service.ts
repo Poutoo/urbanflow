@@ -7,6 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
+import { createHash } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
@@ -21,6 +22,14 @@ import type {
 
 export interface OAuthLoginResponse extends AuthResponse {
   isNewUser: boolean;
+}
+
+// Les refresh tokens sont stockés hashés (jamais en clair) : leur entropie
+// cryptographique (JWT signé) rend un simple SHA-256 suffisant, la table
+// sessions.refreshToken n'a pas besoin d'un hash lent type argon2 (pas de
+// mot de passe humain à faible entropie à protéger ici).
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
 }
 
 @Injectable()
@@ -155,7 +164,7 @@ export class AuthService {
 
   async refreshToken(token: string): Promise<AuthResponse> {
     const session = await this.prisma.session.findUnique({
-      where: { refreshToken: token },
+      where: { refreshToken: hashToken(token) },
       include: { user: true },
     });
 
@@ -172,7 +181,7 @@ export class AuthService {
   }
 
   async logout(refreshToken: string): Promise<void> {
-    await this.prisma.session.deleteMany({ where: { refreshToken } });
+    await this.prisma.session.deleteMany({ where: { refreshToken: hashToken(refreshToken) } });
   }
 
   async getMe(userId: string): Promise<AuthMeResponse> {
@@ -221,7 +230,7 @@ export class AuthService {
     await this.prisma.session.create({
       data: {
         userId: user.id,
-        refreshToken,
+        refreshToken: hashToken(refreshToken),
         userAgent: userAgent ?? null,
         ipAddress: ipAddress ?? null,
         expiresAt,

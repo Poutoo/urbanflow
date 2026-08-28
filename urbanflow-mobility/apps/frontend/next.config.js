@@ -66,10 +66,44 @@ const withPWA = require('next-pwa')({
   ],
 });
 
+// En dev, le CSP ci-dessous casserait le hot-reload webpack (eval, websocket HMR) —
+// on ne l'applique qu'en prod, où le frontend n'a de toute façon pas besoin de ces
+// mécanismes de dev.
+function buildCsp() {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api'
+  const apiOrigin = new URL(apiUrl).origin
+
+  return [
+    "default-src 'self'",
+    `img-src 'self' data: https://*.basemaps.cartocdn.com https://lh3.googleusercontent.com`,
+    `connect-src 'self' ${apiOrigin}`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "script-src 'self'",
+    "form-action 'self' https://accounts.google.com",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "object-src 'none'",
+  ].join('; ')
+}
+
+const securityHeaders = [
+  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+  ...(process.env.NODE_ENV === 'production'
+    ? [{ key: 'Content-Security-Policy', value: buildCsp() }]
+    : []),
+]
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@urbanflow/types'],
+  async headers() {
+    return [{ source: '/(.*)', headers: securityHeaders }]
+  },
 };
 
 module.exports = withPWA(nextConfig);

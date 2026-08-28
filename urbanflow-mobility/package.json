@@ -30,6 +30,11 @@
       "argon2",
       "prisma",
       "unrs-resolver"
-    ]
+    ],
+    "overrides": {
+      "multer": ">=2.1.1",
+      "lodash": ">=4.18.0",
+      "form-data": ">=4.0.6"
+    }
   }
 }
