@@ -262,7 +262,6 @@ urbanflow/
 - Couverture de tests unitaires Jest côté frontend très faible (9,16 % de lignes au 2026-07-15, seuil configuré à 60 % non atteint) — la validation de ces flux repose sur les tests E2E Cypress plutôt que sur des tests de composants
 - La variable `OPENWEATHER_API_KEY` est déclarée dans `apps/backend/.env.example` mais n'est référencée par aucun service du code actuel : l'intégration météo n'est pas implémentée
 - Le mode de transport "covoiturage" est sélectionnable comme préférence utilisateur (type `TransportMode`, sélecteur UI) mais aucun module de mise en relation ou de calcul d'itinéraire covoiturage n'existe
-- Aucun score Lighthouse n'est committé dans le repo au moment de la rédaction de ce README — à mesurer et documenter séparément si besoin pour la soutenance
 - Aucun fichier `LICENSE` n'est présent dans le repo
 
 ---
