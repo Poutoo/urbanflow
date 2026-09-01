@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/Input';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useApiSwr } from '@/hooks/useApiSwr';
 import { useProfile } from '@/hooks/useProfile';
+import { useFavoriteAddresses } from '@/hooks/useFavoriteAddresses';
+import { usePlaceSuggestions, type PlaceSuggestion } from '@/hooks/usePlaceSuggestions';
 import type { AuthMeResponse, PriorityMode, TransportMode } from '@urbanflow/types';
 
 interface InitialUser {
@@ -21,16 +23,16 @@ interface InitialUser {
   avatarUrl: string | null;
 }
 
-interface FavoriteAddress {
-  icon: string;
-  label: string;
-  address: string;
+// Icône par libellé : simple confort visuel pour les deux libellés les plus
+// courants — "Domicile"/"Travail" ne sont plus des concepts distincts en
+// base (juste des FavoriteAddress comme les autres, voir migration
+// favorite_addresses), donc toute autre entrée retombe sur une épingle générique.
+function addressIcon(label: string): string {
+  const key = label.trim().toLowerCase();
+  if (key === 'domicile' || key === 'maison') return 'ph:house-simple';
+  if (key === 'travail' || key === 'bureau') return 'ph:briefcase';
+  return 'ph:map-pin';
 }
-
-const FAVORITE_ADDRESSES: FavoriteAddress[] = [
-  { icon: 'ph:house-simple', label: 'Domicile', address: '12 rue des Lilas, Centre' },
-  { icon: 'ph:briefcase', label: 'Travail', address: "Parc d'activités Nord, Bât. C" },
-];
 
 const PRIORITY_MODES: { value: PriorityMode; label: string }[] = [
   { value: 'ecological', label: 'Écologique' },
@@ -81,6 +83,55 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
     }, 600);
   }
 
+  // Adresses favorites : liste réelle (GET/POST/DELETE /favorite-addresses).
+  const { addresses, addAddress, removeAddress } = useFavoriteAddresses();
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newLabel, setNewLabel] = useState('');
+  const [addressQuery, setAddressQuery] = useState('');
+  const [selectedPlace, setSelectedPlace] = useState<PlaceSuggestion | null>(null);
+  const [savingAddress, setSavingAddress] = useState(false);
+  const [addAddressError, setAddAddressError] = useState<string | null>(null);
+  const { suggestions: addressSuggestions, clear: clearAddressSuggestions } = usePlaceSuggestions(
+    selectedPlace ? '' : addressQuery,
+  );
+
+  function resetAddForm() {
+    setShowAddForm(false);
+    setNewLabel('');
+    setAddressQuery('');
+    setSelectedPlace(null);
+    setAddAddressError(null);
+    clearAddressSuggestions();
+  }
+
+  async function handleAddAddress(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newLabel.trim() || !selectedPlace) {
+      setAddAddressError('Choisissez un libellé et une adresse dans la liste de suggestions.');
+      return;
+    }
+    setSavingAddress(true);
+    setAddAddressError(null);
+    try {
+      await addAddress({
+        label: newLabel.trim(),
+        address: selectedPlace.name,
+        lat: selectedPlace.lat,
+        lng: selectedPlace.lng,
+      });
+      resetAddForm();
+    } catch {
+      setAddAddressError('Échec de l’enregistrement — réessayez.');
+    } finally {
+      setSavingAddress(false);
+    }
+  }
+
+  async function handleRemoveAddress(id: string, label: string) {
+    if (!window.confirm(`Supprimer l'adresse "${label}" ?`)) return;
+    await removeAddress(id);
+  }
+
   return (
     <div className="flex flex-col gap-4 px-4 pb-6 pt-4">
       {/* Header profil */}
@@ -97,26 +148,18 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
 
       {/* Adresses favorites */}
       <section aria-label="Adresses favorites">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
-            ADRESSES FAVORITES
-          </h2>
-          <button
-            type="button"
-            className="text-sm font-medium text-[#1A5F7A] underline-offset-2 hover:underline dark:text-primary-content"
-          >
-            Gérer
-          </button>
-        </div>
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
+          ADRESSES FAVORITES
+        </h2>
         <Card padding="sm">
           <ul className="divide-y divide-gray-100 dark:divide-divider">
-            {FAVORITE_ADDRESSES.map((addr) => (
-              <li key={addr.label} className="flex items-center gap-3 py-3">
+            {addresses.map((addr) => (
+              <li key={addr.id} className="flex items-center gap-3 py-3">
                 <span
                   className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[8px] bg-gray-100 text-[#1A5F7A] dark:bg-divider/60 dark:text-primary-content"
                   aria-hidden="true"
                 >
-                  <Icon icon={addr.icon} width={18} />
+                  <Icon icon={addressIcon(addr.label)} width={18} />
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-[#0F1B2D] dark:text-text-main">{addr.label}</p>
@@ -124,27 +167,87 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
                 </div>
                 <button
                   type="button"
-                  aria-label={`Options pour ${addr.label}`}
-                  className="text-[#6B7280] dark:text-muted"
+                  aria-label={`Supprimer ${addr.label}`}
+                  onClick={() => void handleRemoveAddress(addr.id, addr.label)}
+                  className="text-[#6B7280] hover:text-red-600 dark:text-muted dark:hover:text-red-400"
                 >
-                  ···
+                  <Icon icon="ph:trash" width={18} />
                 </button>
               </li>
             ))}
-            <li>
-              <button
-                type="button"
-                className="flex w-full items-center gap-3 py-3 text-[#1A5F7A] font-medium dark:text-primary-content"
-              >
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-[8px] border-2 border-dashed border-[#1A5F7A]/30 text-lg dark:border-primary-content/30"
-                  aria-hidden="true"
+
+            {showAddForm ? (
+              <li className="py-3">
+                <form onSubmit={(e) => void handleAddAddress(e)} className="flex flex-col gap-2">
+                  <Input
+                    label="Libellé"
+                    placeholder="Domicile, Travail, Chez mes parents…"
+                    value={newLabel}
+                    onChange={(e) => setNewLabel(e.target.value)}
+                    maxLength={50}
+                  />
+                  <div className="relative">
+                    <Input
+                      label="Adresse"
+                      placeholder="Rechercher une adresse…"
+                      value={selectedPlace ? selectedPlace.name : addressQuery}
+                      onChange={(e) => {
+                        setAddressQuery(e.target.value);
+                        setSelectedPlace(null);
+                      }}
+                      autoComplete="off"
+                    />
+                    {!selectedPlace && addressSuggestions.length > 0 && (
+                      <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-[8px] border border-gray-200 bg-white shadow-lg dark:border-divider dark:bg-surface">
+                        {addressSuggestions.map((place, i) => (
+                          <li key={i}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedPlace(place);
+                                clearAddressSuggestions();
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm text-[#0F1B2D] hover:bg-[#F7F9FC] dark:text-text-main dark:hover:bg-divider/40"
+                            >
+                              {place.name}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  {addAddressError && (
+                    <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+                      {addAddressError}
+                    </p>
+                  )}
+                  <div className="flex gap-2 pt-1">
+                    <Button type="submit" size="sm" disabled={savingAddress}>
+                      {savingAddress ? 'Enregistrement…' : 'Enregistrer'}
+                    </Button>
+                    <Button type="button" variant="secondary" size="sm" onClick={resetAddForm}>
+                      Annuler
+                    </Button>
+                  </div>
+                </form>
+              </li>
+            ) : (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(true)}
+                  className="flex w-full items-center gap-3 py-3 text-[#1A5F7A] font-medium dark:text-primary-content"
                 >
-                  +
-                </span>
-                Ajouter une adresse
-              </button>
-            </li>
+                  <span
+                    className="flex h-9 w-9 items-center justify-center rounded-[8px] border-2 border-dashed border-[#1A5F7A]/30 text-lg dark:border-primary-content/30"
+                    aria-hidden="true"
+                  >
+                    +
+                  </span>
+                  Ajouter une adresse
+                </button>
+              </li>
+            )}
           </ul>
         </Card>
       </section>
