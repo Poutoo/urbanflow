@@ -7,19 +7,9 @@ import {
   IsNumber,
   Min,
   Max,
-  IsObject,
-  ValidateNested,
   MaxLength,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-
-class CoordinatesDto {
-  @IsNumber()
-  lat!: number;
-
-  @IsNumber()
-  lng!: number;
-}
+import { AVATAR_IDS } from '@urbanflow/types';
 
 const VALID_MODES = ['velo', 'bus', 'tram', 'metro', 'marche', 'trottinette', 'covoiturage'] as const;
 const VALID_PRIORITIES = ['fast', 'ecological', 'economic'] as const;
@@ -46,29 +36,18 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsBoolean()
+  voiceGuidanceEnabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
   darkModeEnabled?: boolean;
 
+  // Jamais une URL arbitraire fournie par le client : uniquement une clé
+  // parmi la liste fermée AVATAR_IDS (source unique partagée avec le
+  // frontend, voir @urbanflow/types) — toute autre valeur est rejetée (400).
   @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  homeAddress?: string;
-
-  @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => CoordinatesDto)
-  homeCoordinates?: CoordinatesDto;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  workAddress?: string;
-
-  @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => CoordinatesDto)
-  workCoordinates?: CoordinatesDto;
+  @IsIn(AVATAR_IDS)
+  avatarId?: string;
 
   @IsOptional()
   @IsNumber()

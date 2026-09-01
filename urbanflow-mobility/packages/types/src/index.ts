@@ -65,6 +65,22 @@ export interface Coordinates {
   lng: number;
 }
 
+// Source unique de vérité pour les avatars prédéfinis, partagée entre le
+// rendu de la grille de sélection (frontend) et la validation serveur
+// (backend, @IsIn(AVATAR_IDS)) — jamais de désynchronisation possible entre
+// "ce qui s'affiche" et "ce qui est accepté".
+export const AVATAR_IDS = [
+  'avatar-01',
+  'avatar-02',
+  'avatar-03',
+  'avatar-04',
+  'avatar-05',
+  'avatar-06',
+  'avatar-07',
+  'avatar-08',
+] as const;
+export type AvatarId = (typeof AVATAR_IDS)[number];
+
 export interface UserProfile {
   id: string;
   userId: string;
@@ -72,11 +88,9 @@ export interface UserProfile {
   priorityMode: PriorityMode;
   pmrEnabled: boolean;
   noStairsEnabled: boolean;
+  voiceGuidanceEnabled: boolean;
   darkModeEnabled: boolean;
-  homeAddress: string | null;
-  homeCoordinates: Coordinates | null;
-  workAddress: string | null;
-  workCoordinates: Coordinates | null;
+  avatarId: AvatarId | null;
   co2Goal: number;
 }
 
@@ -85,13 +99,30 @@ export interface UpdateProfilePayload {
   priorityMode?: PriorityMode;
   pmrEnabled?: boolean;
   noStairsEnabled?: boolean;
+  voiceGuidanceEnabled?: boolean;
   darkModeEnabled?: boolean;
-  homeAddress?: string;
-  homeCoordinates?: Coordinates;
-  workAddress?: string;
-  workCoordinates?: Coordinates;
+  avatarId?: AvatarId;
   co2Goal?: number;
   name?: string;
+}
+
+// ─── Favorite addresses ────────────────────────────────────────────────────
+
+export interface FavoriteAddress {
+  id: string;
+  userId: string;
+  label: string;
+  address: string;
+  lat: number;
+  lng: number;
+  createdAt: string;
+}
+
+export interface CreateFavoriteAddressPayload {
+  label: string;
+  address: string;
+  lat: number;
+  lng: number;
 }
 
 // ─── Routes ─────────────────────────────────────────────────────────────────

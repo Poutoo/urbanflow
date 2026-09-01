@@ -8,6 +8,7 @@ import { CacheModule } from './cache/cache.module';
 import { RoutesModule } from './routes/routes.module';
 import { PlacesModule } from './places/places.module';
 import { Co2Module } from './co2/co2.module';
+import { FavoriteAddressesModule } from './favorite-addresses/favorite-addresses.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -36,6 +37,7 @@ import { HealthController } from './health/health.controller';
     RoutesModule,
     PlacesModule,
     Co2Module,
+    FavoriteAddressesModule,
   ],
 })
 export class AppModule {}

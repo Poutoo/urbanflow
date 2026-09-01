@@ -17,18 +17,7 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto): Promise<UserProfile> {
-    const { name, homeCoordinates, workCoordinates, ...rest } = dto;
-
-    // Prisma Json fields require plain object literals — class instances lack the index signature
-    const prismaData = {
-      ...rest,
-      ...(homeCoordinates !== undefined && {
-        homeCoordinates: { lat: homeCoordinates.lat, lng: homeCoordinates.lng },
-      }),
-      ...(workCoordinates !== undefined && {
-        workCoordinates: { lat: workCoordinates.lat, lng: workCoordinates.lng },
-      }),
-    };
+    const { name, ...prismaData } = dto;
 
     const [profile] = await this.prisma.$transaction([
       this.prisma.userProfile.upsert({
@@ -51,22 +40,11 @@ export class UsersService {
     priorityMode: string;
     pmrEnabled: boolean;
     noStairsEnabled: boolean;
+    voiceGuidanceEnabled: boolean;
     darkModeEnabled: boolean;
-    homeAddress: string | null;
-    homeCoordinates: unknown;
-    workAddress: string | null;
-    workCoordinates: unknown;
+    avatarId: string | null;
     co2Goal: number;
   }): UserProfile {
-    const toCoords = (raw: unknown) => {
-      if (raw === null || raw === undefined) return null;
-      const obj = raw as Record<string, unknown>;
-      const lat = obj['lat'];
-      const lng = obj['lng'];
-      if (typeof lat === 'number' && typeof lng === 'number') return { lat, lng };
-      return null;
-    };
-
     return {
       id: profile.id,
       userId: profile.userId,
@@ -74,11 +52,9 @@ export class UsersService {
       priorityMode: profile.priorityMode as UserProfile['priorityMode'],
       pmrEnabled: profile.pmrEnabled,
       noStairsEnabled: profile.noStairsEnabled,
+      voiceGuidanceEnabled: profile.voiceGuidanceEnabled,
       darkModeEnabled: profile.darkModeEnabled,
-      homeAddress: profile.homeAddress,
-      homeCoordinates: toCoords(profile.homeCoordinates),
-      workAddress: profile.workAddress,
-      workCoordinates: toCoords(profile.workCoordinates),
+      avatarId: profile.avatarId as UserProfile['avatarId'],
       co2Goal: profile.co2Goal,
     };
   }

@@ -3,10 +3,23 @@
 import { useTheme } from 'next-themes';
 import { Icon } from '@iconify/react';
 import { useIsDarkMode } from '@/hooks/useIsDarkMode';
+import { useProfile } from '@/hooks/useProfile';
 
 export function ThemeToggle() {
   const { setTheme } = useTheme();
   const isDark = useIsDarkMode();
+  const { updateProfile } = useProfile();
+
+  // Le thème lui-même ne dépend jamais du réseau : setTheme() écrit dans
+  // localStorage via next-themes de façon synchrone, avant même que le PUT
+  // parte. Le backend n'est utilisé que pour retrouver le même thème en se
+  // connectant depuis un autre appareil (voir ThemeBackendSync) — s'il
+  // échoue (hors-ligne, session expirée), le thème local reste correct.
+  function toggle() {
+    const next = !isDark;
+    setTheme(next ? 'dark' : 'light');
+    void updateProfile({ darkModeEnabled: next }).catch(() => {});
+  }
 
   return (
     <div className="flex items-center justify-between py-2.5">
@@ -27,7 +40,7 @@ export function ThemeToggle() {
         role="switch"
         aria-checked={isDark}
         aria-label="Activer le mode sombre"
-        onClick={() => setTheme(isDark ? 'light' : 'dark')}
+        onClick={toggle}
         className={[
           'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A5F7A] focus-visible:ring-offset-2 dark:focus-visible:ring-primary-content',
           isDark ? 'bg-[#2D7D46]' : 'bg-gray-200 dark:bg-divider',
