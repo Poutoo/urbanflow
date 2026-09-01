@@ -12,6 +12,7 @@ const mockProfile = {
   noStairsEnabled: false,
   voiceGuidanceEnabled: false,
   darkModeEnabled: false,
+  avatarId: null,
   co2Goal: 40.0,
   createdAt: new Date(),
   updatedAt: new Date(),

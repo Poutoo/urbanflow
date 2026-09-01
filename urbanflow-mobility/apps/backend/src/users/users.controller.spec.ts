@@ -14,6 +14,7 @@ const mockProfile = {
   noStairsEnabled: false,
   voiceGuidanceEnabled: false,
   darkModeEnabled: false,
+  avatarId: null,
   co2Goal: 40.0,
 };
 
@@ -172,6 +173,41 @@ describe('UsersController (integration)', () => {
         .send({ voiceGuidanceEnabled: 'oui' });
 
       expect(res.status).toBe(400);
+    });
+
+    it("retourne 400 si avatarId ne fait pas partie de la liste autorisée", async () => {
+      const res = await request(app.getHttpServer())
+        .put('/users/profile')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ avatarId: '../../etc/passwd' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('retourne 400 si avatarId est une URL arbitraire', async () => {
+      const res = await request(app.getHttpServer())
+        .put('/users/profile')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ avatarId: 'https://evil.example.com/tracker.png' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('accepte un avatarId valide de la liste autorisée', async () => {
+      const updatedProfile = { ...mockProfile, avatarId: 'avatar-03' };
+      mockUsersService.updateProfile.mockResolvedValue(updatedProfile);
+
+      const res = await request(app.getHttpServer())
+        .put('/users/profile')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ avatarId: 'avatar-03' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('avatarId', 'avatar-03');
+      expect(mockUsersService.updateProfile).toHaveBeenCalledWith(
+        'user-1',
+        expect.objectContaining({ avatarId: 'avatar-03' }),
+      );
     });
 
     it('accepte voiceGuidanceEnabled à true', async () => {

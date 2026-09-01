@@ -70,6 +70,10 @@ model UserProfile {
   noStairsEnabled      Boolean  @default(false)
   voiceGuidanceEnabled Boolean  @default(false)
   darkModeEnabled      Boolean  @default(false)
+  // Clé d'un avatar prédéfini (voir AVATAR_IDS, @urbanflow/types) — jamais une
+  // URL arbitraire fournie par le client. null = pas d'avatar choisi (repli
+  // sur la photo Google si elle existe, sinon les initiales).
+  avatarId             String?
   co2Goal              Float    @default(40.0)
   badgeLevel           Int      @default(0)
   totalCo2SavedKg      Float    @default(0)

@@ -42,6 +42,7 @@ export class UsersService {
     noStairsEnabled: boolean;
     voiceGuidanceEnabled: boolean;
     darkModeEnabled: boolean;
+    avatarId: string | null;
     co2Goal: number;
   }): UserProfile {
     return {
@@ -53,6 +54,7 @@ export class UsersService {
       noStairsEnabled: profile.noStairsEnabled,
       voiceGuidanceEnabled: profile.voiceGuidanceEnabled,
       darkModeEnabled: profile.darkModeEnabled,
+      avatarId: profile.avatarId as UserProfile['avatarId'],
       co2Goal: profile.co2Goal,
     };
   }
