@@ -7,6 +7,7 @@ import { Icon } from '@iconify/react';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { EcoBadge } from '@/components/profile/EcoBadge';
 import { TransportModes } from '@/components/profile/TransportModes';
+import { AvatarPicker } from '@/components/profile/AvatarPicker';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -15,7 +16,7 @@ import { useApiSwr } from '@/hooks/useApiSwr';
 import { useProfile } from '@/hooks/useProfile';
 import { useFavoriteAddresses } from '@/hooks/useFavoriteAddresses';
 import { usePlaceSuggestions, type PlaceSuggestion } from '@/hooks/usePlaceSuggestions';
-import type { AuthMeResponse, PriorityMode, TransportMode } from '@urbanflow/types';
+import type { AuthMeResponse, AvatarId, PriorityMode, TransportMode } from '@urbanflow/types';
 
 interface InitialUser {
   name: string;
@@ -83,6 +84,39 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
     }, 600);
   }
 
+  // Nom : même stratégie de sauvegarde différée que l'objectif CO₂. La session
+  // NextAuth (initialUser.name) n'est pas re-fetchée après une mise à jour —
+  // on affiche donc en priorité la valeur locale une fois éditée, avec
+  // initialUser.name comme valeur de départ jusqu'à la première frappe.
+  const [nameInput, setNameInput] = useState(initialUser.name);
+  const nameDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
+
+  function handleNameChange(value: string) {
+    setNameInput(value);
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+      setNameError('Le nom ne peut pas être vide');
+      return;
+    }
+    if (trimmed.length > 100) {
+      setNameError('100 caractères maximum');
+      return;
+    }
+    setNameError(null);
+
+    if (nameDebounce.current) clearTimeout(nameDebounce.current);
+    nameDebounce.current = setTimeout(() => {
+      void updateProfile({ name: trimmed });
+    }, 600);
+  }
+
+  // Avatar prédéfini : sauvegarde immédiate au clic (comme les toggles).
+  // Résolution d'affichage : avatar choisi > photo Google (OAuth) > initiales
+  // (gérées par ProfileHeader lui-même si avatarUrl est null).
+  const avatarId: AvatarId | null = profile?.avatarId ?? null;
+  const resolvedAvatarUrl = avatarId ? `/avatars/${avatarId}.svg` : initialUser.avatarUrl;
+
   // Adresses favorites : liste réelle (GET/POST/DELETE /favorite-addresses).
   const { addresses, addAddress, removeAddress } = useFavoriteAddresses();
   const [showAddForm, setShowAddForm] = useState(false);
@@ -137,14 +171,34 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
       {/* Header profil */}
       <Card padding="sm">
         <ProfileHeader
-          name={initialUser.name}
+          name={nameInput || initialUser.name}
           email={initialUser.email}
-          avatarUrl={initialUser.avatarUrl}
+          avatarUrl={resolvedAvatarUrl}
         />
         {me && (
           <EcoBadge badgeLevel={me.profile.badgeLevel} totalCo2SavedKg={me.profile.totalCo2SavedKg} />
         )}
       </Card>
+
+      {/* Modifier le profil : nom + avatar prédéfini */}
+      <section aria-label="Modifier le profil">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
+          MODIFIER LE PROFIL
+        </h2>
+        <Card padding="sm" className="flex flex-col gap-4">
+          <Input
+            label="Nom"
+            value={nameInput}
+            onChange={(e) => handleNameChange(e.target.value)}
+            error={nameError ?? undefined}
+            maxLength={100}
+          />
+          <div>
+            <p className="mb-2 text-sm font-medium text-[#0F1B2D] dark:text-text-main">Avatar</p>
+            <AvatarPicker selected={avatarId} onSelect={(id) => void updateProfile({ avatarId: id })} />
+          </div>
+        </Card>
+      </section>
 
       {/* Adresses favorites */}
       <section aria-label="Adresses favorites">
