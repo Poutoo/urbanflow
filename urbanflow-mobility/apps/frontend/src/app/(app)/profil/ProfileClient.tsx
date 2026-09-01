@@ -11,12 +11,19 @@ import { AvatarPicker } from '@/components/profile/AvatarPicker';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { SaveBar } from '@/components/ui/SaveBar';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useApiSwr } from '@/hooks/useApiSwr';
 import { useProfile } from '@/hooks/useProfile';
 import { useFavoriteAddresses } from '@/hooks/useFavoriteAddresses';
 import { usePlaceSuggestions, type PlaceSuggestion } from '@/hooks/usePlaceSuggestions';
-import type { AuthMeResponse, AvatarId, PriorityMode, TransportMode } from '@urbanflow/types';
+import type {
+  AuthMeResponse,
+  AvatarId,
+  PriorityMode,
+  TransportMode,
+  UpdateProfilePayload,
+} from '@urbanflow/types';
 
 interface InitialUser {
   name: string;
@@ -84,17 +91,51 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
     }, 600);
   }
 
-  // Nom : même stratégie de sauvegarde différée que l'objectif CO₂. La session
-  // NextAuth (initialUser.name) n'est pas re-fetchée après une mise à jour —
-  // on affiche donc en priorité la valeur locale une fois éditée, avec
-  // initialUser.name comme valeur de départ jusqu'à la première frappe.
-  const [nameInput, setNameInput] = useState(initialUser.name);
-  const nameDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [nameError, setNameError] = useState<string | null>(null);
+  // Section "Modifier le profil" : repliée par défaut, ouverte uniquement en
+  // cliquant sur l'en-tête (avatar/nom/email/badge).
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
 
-  function handleNameChange(value: string) {
-    setNameInput(value);
-    const trimmed = value.trim();
+  // Nom + avatar : édités en brouillon local, jamais persistés tant que
+  // "Enregistrer" n'a pas été pressé (voir SaveBar). `committedName` est la
+  // seule source de vérité du nom affiché — la session NextAuth
+  // (initialUser.name) n'est jamais re-fetchée après une mise à jour, et
+  // `UserProfile` (GET /users/profile) ne renvoie pas `name` (il vit sur
+  // `User`, pas `UserProfile`).
+  const [committedName, setCommittedName] = useState(initialUser.name);
+  const [draftName, setDraftName] = useState(initialUser.name);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const committedAvatarId: AvatarId | null = profile?.avatarId ?? null;
+  const [draftAvatarId, setDraftAvatarId] = useState<AvatarId | null>(committedAvatarId);
+  const [savingProfileEdit, setSavingProfileEdit] = useState(false);
+
+  // Réinitialise le brouillon sur les dernières valeurs connues à chaque
+  // ouverture du panneau — sans ça, rouvrir après un "Annuler" ou une
+  // fermeture sans sauvegarde pourrait réafficher un brouillon périmé.
+  // Fait directement au clic (pas dans un effet) : on ne veut réinitialiser
+  // qu'à l'ouverture, jamais si committedName/committedAvatarId changent
+  // pendant que le panneau reste ouvert (ça écraserait une saisie en cours).
+  function toggleProfileEdit() {
+    setShowProfileEdit((wasOpen) => {
+      if (!wasOpen) {
+        setDraftName(committedName);
+        setDraftAvatarId(committedAvatarId);
+        setNameError(null);
+      }
+      return !wasOpen;
+    });
+  }
+
+  const profileEditDirty =
+    showProfileEdit && (draftName.trim() !== committedName || draftAvatarId !== committedAvatarId);
+
+  function handleCancelProfileEdit() {
+    setDraftName(committedName);
+    setDraftAvatarId(committedAvatarId);
+    setNameError(null);
+  }
+
+  async function handleSaveProfileEdit() {
+    const trimmed = draftName.trim();
     if (trimmed.length === 0) {
       setNameError('Le nom ne peut pas être vide');
       return;
@@ -103,19 +144,26 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
       setNameError('100 caractères maximum');
       return;
     }
-    setNameError(null);
 
-    if (nameDebounce.current) clearTimeout(nameDebounce.current);
-    nameDebounce.current = setTimeout(() => {
-      void updateProfile({ name: trimmed });
-    }, 600);
+    const patch: UpdateProfilePayload = {};
+    if (trimmed !== committedName) patch.name = trimmed;
+    if (draftAvatarId && draftAvatarId !== committedAvatarId) patch.avatarId = draftAvatarId;
+    if (Object.keys(patch).length === 0) return;
+
+    setSavingProfileEdit(true);
+    try {
+      await updateProfile(patch);
+      setCommittedName(trimmed);
+    } finally {
+      setSavingProfileEdit(false);
+    }
   }
 
-  // Avatar prédéfini : sauvegarde immédiate au clic (comme les toggles).
-  // Résolution d'affichage : avatar choisi > photo Google (OAuth) > initiales
-  // (gérées par ProfileHeader lui-même si avatarUrl est null).
-  const avatarId: AvatarId | null = profile?.avatarId ?? null;
-  const resolvedAvatarUrl = avatarId ? `/avatars/${avatarId}.svg` : initialUser.avatarUrl;
+  // Résolution d'affichage : avatar choisi (enregistré) > photo Google
+  // (OAuth) > initiales (gérées par ProfileHeader si avatarUrl est null).
+  const resolvedAvatarUrl = committedAvatarId
+    ? `/avatars/${committedAvatarId}.svg`
+    : initialUser.avatarUrl;
 
   // Adresses favorites : liste réelle (GET/POST/DELETE /favorite-addresses).
   const { addresses, addAddress, removeAddress } = useFavoriteAddresses();
@@ -138,8 +186,8 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
     clearAddressSuggestions();
   }
 
-  async function handleAddAddress(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleAddAddress(e?: React.FormEvent) {
+    e?.preventDefault();
     if (!newLabel.trim() || !selectedPlace) {
       setAddAddressError('Choisissez un libellé et une adresse dans la liste de suggestions.');
       return;
@@ -166,39 +214,60 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
     await removeAddress(id);
   }
 
-  return (
-    <div className="flex flex-col gap-4 px-4 pb-6 pt-4">
-      {/* Header profil */}
-      <Card padding="sm">
-        <ProfileHeader
-          name={nameInput || initialUser.name}
-          email={initialUser.email}
-          avatarUrl={resolvedAvatarUrl}
-        />
-        {me && (
-          <EcoBadge badgeLevel={me.profile.badgeLevel} totalCo2SavedKg={me.profile.totalCo2SavedKg} />
-        )}
-      </Card>
+  // Formulaire "adresse" considéré "modifié" dès qu'il contient une saisie —
+  // rien n'est envoyé au serveur avant l'appui sur "Enregistrer" (SaveBar).
+  const addressFormDirty = showAddForm && (newLabel.trim() !== '' || selectedPlace !== null);
 
-      {/* Modifier le profil : nom + avatar prédéfini */}
-      <section aria-label="Modifier le profil">
-        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
-          MODIFIER LE PROFIL
-        </h2>
-        <Card padding="sm" className="flex flex-col gap-4">
-          <Input
-            label="Nom"
-            value={nameInput}
-            onChange={(e) => handleNameChange(e.target.value)}
-            error={nameError ?? undefined}
-            maxLength={100}
-          />
-          <div>
-            <p className="mb-2 text-sm font-medium text-[#0F1B2D] dark:text-text-main">Avatar</p>
-            <AvatarPicker selected={avatarId} onSelect={(id) => void updateProfile({ avatarId: id })} />
-          </div>
+  // Une seule barre de confirmation à la fois : priorité au panneau profil
+  // s'il est ouvert et modifié (cas rare où les deux le seraient en même
+  // temps), sinon le formulaire d'adresse.
+  const saveBarMode: 'profile' | 'address' | null = profileEditDirty
+    ? 'profile'
+    : addressFormDirty
+      ? 'address'
+      : null;
+
+  return (
+    <>
+    <div className="flex flex-col gap-4 px-4 pb-6 pt-4">
+      {/* Header profil — cliquable : ouvre/ferme "Modifier le profil" */}
+      <button
+        type="button"
+        onClick={toggleProfileEdit}
+        aria-expanded={showProfileEdit}
+        aria-controls="profil-edit-section"
+        className="text-left"
+      >
+        <Card padding="sm">
+          <ProfileHeader name={committedName} email={initialUser.email} avatarUrl={resolvedAvatarUrl} />
+          {me && (
+            <EcoBadge badgeLevel={me.profile.badgeLevel} totalCo2SavedKg={me.profile.totalCo2SavedKg} />
+          )}
         </Card>
-      </section>
+      </button>
+
+      {/* Modifier le profil : nom + avatar prédéfini — repliée par défaut,
+          rien n'est envoyé au serveur avant "Enregistrer" (voir SaveBar) */}
+      {showProfileEdit && (
+        <section id="profil-edit-section" aria-label="Modifier le profil">
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6B7280] dark:text-muted">
+            MODIFIER LE PROFIL
+          </h2>
+          <Card padding="sm" className="flex flex-col gap-4">
+            <Input
+              label="Nom"
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              error={nameError ?? undefined}
+              maxLength={100}
+            />
+            <div>
+              <p className="mb-2 text-sm font-medium text-[#0F1B2D] dark:text-text-main">Avatar</p>
+              <AvatarPicker selected={draftAvatarId} onSelect={setDraftAvatarId} />
+            </div>
+          </Card>
+        </section>
+      )}
 
       {/* Adresses favorites */}
       <section aria-label="Adresses favorites">
@@ -232,7 +301,11 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
 
             {showAddForm ? (
               <li className="py-3">
-                <form onSubmit={(e) => void handleAddAddress(e)} className="flex flex-col gap-2">
+                <form
+                  onSubmit={(e) => void handleAddAddress(e)}
+                  className="flex flex-col gap-2"
+                  aria-label="Ajouter une adresse favorite"
+                >
                   <Input
                     label="Libellé"
                     placeholder="Domicile, Travail, Chez mes parents…"
@@ -275,14 +348,14 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
                       {addAddressError}
                     </p>
                   )}
-                  <div className="flex gap-2 pt-1">
-                    <Button type="submit" size="sm" disabled={savingAddress}>
-                      {savingAddress ? 'Enregistrement…' : 'Enregistrer'}
-                    </Button>
-                    <Button type="button" variant="secondary" size="sm" onClick={resetAddForm}>
-                      Annuler
-                    </Button>
-                  </div>
+                  {/* Bouton submit invisible : Entrée dans un champ déclenche la
+                      même action que la SaveBar en bas d'écran, seule action
+                      visible — rien n'est envoyé avant. Libellé volontairement
+                      différent de "Enregistrer" (SaveBar) pour rester ciblable
+                      sans ambiguïté dans les tests. */}
+                  <button type="submit" className="sr-only">
+                    Valider le formulaire d&apos;adresse
+                  </button>
                 </form>
               </li>
             ) : (
@@ -439,6 +512,20 @@ export function ProfileClient({ initialUser }: { initialUser: InitialUser }) {
         Se déconnecter
       </Button>
     </div>
+
+    <SaveBar
+      visible={saveBarMode !== null}
+      saving={saveBarMode === 'profile' ? savingProfileEdit : savingAddress}
+      onSave={() => {
+        if (saveBarMode === 'profile') void handleSaveProfileEdit();
+        else if (saveBarMode === 'address') void handleAddAddress();
+      }}
+      onCancel={() => {
+        if (saveBarMode === 'profile') handleCancelProfileEdit();
+        else if (saveBarMode === 'address') resetAddForm();
+      }}
+    />
+    </>
   );
 }
 
