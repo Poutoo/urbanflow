@@ -46,6 +46,10 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsBoolean()
+  voiceGuidanceEnabled?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
   darkModeEnabled?: boolean;
 
   @IsOptional()

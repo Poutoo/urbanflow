@@ -12,6 +12,7 @@ const mockProfile = {
   priorityMode: 'ecological',
   pmrEnabled: false,
   noStairsEnabled: false,
+  voiceGuidanceEnabled: false,
   darkModeEnabled: false,
   homeAddress: null,
   homeCoordinates: null,
@@ -157,6 +158,46 @@ describe('UsersController (integration)', () => {
         .send({ homeCoordinates: { lat: 48.85, lng: 2.35 } });
 
       expect(res.status).toBe(200);
+    });
+
+    it('retourne 400 si co2Goal dépasse le maximum autorisé', async () => {
+      const res = await request(app.getHttpServer())
+        .put('/users/profile')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ co2Goal: 10001 });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('retourne 400 si co2Goal est négatif', async () => {
+      const res = await request(app.getHttpServer())
+        .put('/users/profile')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ co2Goal: -1 });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('retourne 400 si voiceGuidanceEnabled n\'est pas un booléen', async () => {
+      const res = await request(app.getHttpServer())
+        .put('/users/profile')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ voiceGuidanceEnabled: 'oui' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('accepte voiceGuidanceEnabled à true', async () => {
+      const updatedProfile = { ...mockProfile, voiceGuidanceEnabled: true };
+      mockUsersService.updateProfile.mockResolvedValue(updatedProfile);
+
+      const res = await request(app.getHttpServer())
+        .put('/users/profile')
+        .set('Authorization', 'Bearer valid-token')
+        .send({ voiceGuidanceEnabled: true });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('voiceGuidanceEnabled', true);
     });
   });
 });

@@ -10,6 +10,7 @@ const mockProfile = {
   priorityMode: 'ecological',
   pmrEnabled: false,
   noStairsEnabled: false,
+  voiceGuidanceEnabled: false,
   darkModeEnabled: false,
   homeAddress: '1 rue de la Paix, Paris',
   homeCoordinates: { lat: 48.8698, lng: 2.3311 },

@@ -72,6 +72,7 @@ export interface UserProfile {
   priorityMode: PriorityMode;
   pmrEnabled: boolean;
   noStairsEnabled: boolean;
+  voiceGuidanceEnabled: boolean;
   darkModeEnabled: boolean;
   homeAddress: string | null;
   homeCoordinates: Coordinates | null;
@@ -85,6 +86,7 @@ export interface UpdateProfilePayload {
   priorityMode?: PriorityMode;
   pmrEnabled?: boolean;
   noStairsEnabled?: boolean;
+  voiceGuidanceEnabled?: boolean;
   darkModeEnabled?: boolean;
   homeAddress?: string;
   homeCoordinates?: Coordinates;

@@ -51,6 +51,7 @@ export class UsersService {
     priorityMode: string;
     pmrEnabled: boolean;
     noStairsEnabled: boolean;
+    voiceGuidanceEnabled: boolean;
     darkModeEnabled: boolean;
     homeAddress: string | null;
     homeCoordinates: unknown;
@@ -74,6 +75,7 @@ export class UsersService {
       priorityMode: profile.priorityMode as UserProfile['priorityMode'],
       pmrEnabled: profile.pmrEnabled,
       noStairsEnabled: profile.noStairsEnabled,
+      voiceGuidanceEnabled: profile.voiceGuidanceEnabled,
       darkModeEnabled: profile.darkModeEnabled,
       homeAddress: profile.homeAddress,
       homeCoordinates: toCoords(profile.homeCoordinates),
