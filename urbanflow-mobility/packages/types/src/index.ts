@@ -74,10 +74,6 @@ export interface UserProfile {
   noStairsEnabled: boolean;
   voiceGuidanceEnabled: boolean;
   darkModeEnabled: boolean;
-  homeAddress: string | null;
-  homeCoordinates: Coordinates | null;
-  workAddress: string | null;
-  workCoordinates: Coordinates | null;
   co2Goal: number;
 }
 
@@ -88,12 +84,27 @@ export interface UpdateProfilePayload {
   noStairsEnabled?: boolean;
   voiceGuidanceEnabled?: boolean;
   darkModeEnabled?: boolean;
-  homeAddress?: string;
-  homeCoordinates?: Coordinates;
-  workAddress?: string;
-  workCoordinates?: Coordinates;
   co2Goal?: number;
   name?: string;
+}
+
+// ─── Favorite addresses ────────────────────────────────────────────────────
+
+export interface FavoriteAddress {
+  id: string;
+  userId: string;
+  label: string;
+  address: string;
+  lat: number;
+  lng: number;
+  createdAt: string;
+}
+
+export interface CreateFavoriteAddressPayload {
+  label: string;
+  address: string;
+  lat: number;
+  lng: number;
 }
 
 // ─── Routes ─────────────────────────────────────────────────────────────────

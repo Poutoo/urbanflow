@@ -12,10 +12,6 @@ const mockProfile = {
   noStairsEnabled: false,
   voiceGuidanceEnabled: false,
   darkModeEnabled: false,
-  homeAddress: '1 rue de la Paix, Paris',
-  homeCoordinates: { lat: 48.8698, lng: 2.3311 },
-  workAddress: null,
-  workCoordinates: null,
   co2Goal: 40.0,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -70,8 +66,7 @@ describe('UsersService', () => {
       expect(result.userId).toBe('user-1');
       expect(result.preferredModes).toEqual(['velo', 'bus']);
       expect(result.priorityMode).toBe('ecological');
-      expect(result.homeCoordinates).toEqual({ lat: 48.8698, lng: 2.3311 });
-      expect(result.workCoordinates).toBeNull();
+      expect(result.voiceGuidanceEnabled).toBe(false);
       expect(mockPrisma.userProfile.findUnique).toHaveBeenCalledWith({
         where: { userId: 'user-1' },
       });
@@ -82,32 +77,6 @@ describe('UsersService', () => {
 
       await expect(service.getProfile('unknown-user')).rejects.toThrow(NotFoundException);
       await expect(service.getProfile('unknown-user')).rejects.toThrow('Profil introuvable');
-    });
-
-    it('mappe les coordonnées null en null', async () => {
-      const profileWithNullCoords = {
-        ...mockProfile,
-        homeCoordinates: null,
-        workCoordinates: null,
-      };
-      mockPrisma.userProfile.findUnique.mockResolvedValue(profileWithNullCoords);
-
-      const result = await service.getProfile('user-1');
-
-      expect(result.homeCoordinates).toBeNull();
-      expect(result.workCoordinates).toBeNull();
-    });
-
-    it('retourne null pour des coordonnées avec type non-number', async () => {
-      const profileWithBadCoords = {
-        ...mockProfile,
-        homeCoordinates: { lat: 'not-a-number', lng: 2.33 },
-      };
-      mockPrisma.userProfile.findUnique.mockResolvedValue(profileWithBadCoords);
-
-      const result = await service.getProfile('user-1');
-
-      expect(result.homeCoordinates).toBeNull();
     });
   });
 
@@ -138,50 +107,18 @@ describe('UsersService', () => {
       expect(transactionArgs).toHaveLength(2);
     });
 
-    it('convertit les homeCoordinates en objet plain pour Prisma', async () => {
+    it('transmet voiceGuidanceEnabled tel quel à Prisma', async () => {
       mockPrisma.$transaction.mockResolvedValue([mockProfile]);
       mockPrisma.userProfile.upsert.mockResolvedValue(mockProfile);
 
-      const dto = { homeCoordinates: { lat: 48.85, lng: 2.35 } };
+      const dto = { voiceGuidanceEnabled: true };
       await service.updateProfile('user-1', dto);
 
       expect(mockPrisma.userProfile.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          update: expect.objectContaining({
-            homeCoordinates: { lat: 48.85, lng: 2.35 },
-          }),
+          update: { voiceGuidanceEnabled: true },
         }),
       );
-    });
-
-    it('convertit les workCoordinates en objet plain pour Prisma', async () => {
-      mockPrisma.$transaction.mockResolvedValue([mockProfile]);
-      mockPrisma.userProfile.upsert.mockResolvedValue(mockProfile);
-
-      const dto = { workCoordinates: { lat: 48.87, lng: 2.37 } };
-      await service.updateProfile('user-1', dto);
-
-      expect(mockPrisma.userProfile.upsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          update: expect.objectContaining({
-            workCoordinates: { lat: 48.87, lng: 2.37 },
-          }),
-        }),
-      );
-    });
-
-    it("n'inclut pas homeCoordinates dans prismaData si absent du dto", async () => {
-      mockPrisma.$transaction.mockResolvedValue([mockProfile]);
-      mockPrisma.userProfile.upsert.mockResolvedValue(mockProfile);
-
-      const dto = { pmrEnabled: true };
-      await service.updateProfile('user-1', dto);
-
-      const upsertCall = mockPrisma.userProfile.upsert.mock.calls[0][0] as {
-        update: Record<string, unknown>;
-      };
-      expect(upsertCall.update).not.toHaveProperty('homeCoordinates');
-      expect(upsertCall.update).not.toHaveProperty('workCoordinates');
     });
 
     it('retourne le profil mappé après mise à jour', async () => {

@@ -22,11 +22,12 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  accounts   Account[]
-  sessions   Session[]
-  profile    UserProfile?
-  routes     SavedRoute[]
-  co2Records Co2Record[]
+  accounts          Account[]
+  sessions          Session[]
+  profile           UserProfile?
+  routes            SavedRoute[]
+  co2Records        Co2Record[]
+  favoriteAddresses FavoriteAddress[]
 
   @@map("users")
 }
@@ -69,10 +70,6 @@ model UserProfile {
   noStairsEnabled      Boolean  @default(false)
   voiceGuidanceEnabled Boolean  @default(false)
   darkModeEnabled      Boolean  @default(false)
-  homeAddress          String?
-  homeCoordinates      Json?
-  workAddress          String?
-  workCoordinates      Json?
   co2Goal              Float    @default(40.0)
   badgeLevel           Int      @default(0)
   totalCo2SavedKg      Float    @default(0)
@@ -82,6 +79,26 @@ model UserProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_profiles")
+}
+
+// Remplace les anciens champs fixes homeAddress/workAddress de UserProfile
+// (limités à 2 adresses) — liste réelle, ajout/suppression libres, cohérente
+// avec le "+ Ajouter une adresse" de la maquette. "Domicile"/"Travail" ne
+// sont plus des concepts distincts en base : ce sont des entrées comme les
+// autres, avec le label que l'utilisateur choisit.
+model FavoriteAddress {
+  id        String   @id @default(cuid())
+  userId    String
+  label     String
+  address   String
+  lat       Float
+  lng       Float
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("favorite_addresses")
 }
 
 model SavedRoute {

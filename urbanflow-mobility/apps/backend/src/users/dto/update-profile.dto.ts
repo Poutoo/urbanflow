@@ -7,19 +7,8 @@ import {
   IsNumber,
   Min,
   Max,
-  IsObject,
-  ValidateNested,
   MaxLength,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-
-class CoordinatesDto {
-  @IsNumber()
-  lat!: number;
-
-  @IsNumber()
-  lng!: number;
-}
 
 const VALID_MODES = ['velo', 'bus', 'tram', 'metro', 'marche', 'trottinette', 'covoiturage'] as const;
 const VALID_PRIORITIES = ['fast', 'ecological', 'economic'] as const;
@@ -51,28 +40,6 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsBoolean()
   darkModeEnabled?: boolean;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  homeAddress?: string;
-
-  @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => CoordinatesDto)
-  homeCoordinates?: CoordinatesDto;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  workAddress?: string;
-
-  @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => CoordinatesDto)
-  workCoordinates?: CoordinatesDto;
 
   @IsOptional()
   @IsNumber()

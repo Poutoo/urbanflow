@@ -14,10 +14,6 @@ const mockProfile = {
   noStairsEnabled: false,
   voiceGuidanceEnabled: false,
   darkModeEnabled: false,
-  homeAddress: null,
-  homeCoordinates: null,
-  workAddress: null,
-  workCoordinates: null,
   co2Goal: 40.0,
 };
 
@@ -149,15 +145,6 @@ describe('UsersController (integration)', () => {
         'user-1',
         expect.objectContaining({ name: 'Nouveau Nom' }),
       );
-    });
-
-    it('accepte homeCoordinates avec lat/lng valides', async () => {
-      const res = await request(app.getHttpServer())
-        .put('/users/profile')
-        .set('Authorization', 'Bearer valid-token')
-        .send({ homeCoordinates: { lat: 48.85, lng: 2.35 } });
-
-      expect(res.status).toBe(200);
     });
 
     it('retourne 400 si co2Goal dépasse le maximum autorisé', async () => {
