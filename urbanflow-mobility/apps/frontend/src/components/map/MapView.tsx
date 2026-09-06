@@ -44,6 +44,31 @@ interface Props {
 
 const PARIS_CENTER: [number, number] = [48.8566, 2.3522]
 
+// Fond de carte CARTO (Positron clair / Dark Matter sombre, raccord avec le
+// mode sombre de l'app). Depuis fin août 2026, CARTO tatoue « API KEY REQUIRED »
+// sur les tuiles non authentifiées : une clé gratuite est requise
+// (https://carto.com/basemaps/apikey), exposée au navigateur via
+// NEXT_PUBLIC_CARTO_API_KEY. Sans clé (repo cloné sans .env), repli sur les
+// tuiles OpenStreetMap — clair uniquement — pour garder une carte lisible.
+const CARTO_API_KEY = process.env['NEXT_PUBLIC_CARTO_API_KEY']
+
+function getTileLayer(isDark: boolean): { url: string; attribution: string; maxZoom: number } {
+  if (CARTO_API_KEY) {
+    return {
+      url: `https://{s}.basemaps.cartocdn.com/${isDark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      maxZoom: 20,
+    }
+  }
+  return {
+    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19,
+  }
+}
+
 export function MapView({
   userLat,
   userLng,
@@ -54,6 +79,8 @@ export function MapView({
   const isDark = useIsDarkMode()
   const center: [number, number] =
     isNaN(userLat) || isNaN(userLng) ? PARIS_CENTER : [userLat, userLng]
+
+  const tiles = getTileLayer(isDark)
 
   // Point d'arrivée = dernière coordonnée du dernier segment ayant une géométrie
   const lastSection = [...sections].reverse().find((s) => s.coordinates.length > 0)
@@ -69,10 +96,10 @@ export function MapView({
       attributionControl={true}
     >
       <TileLayer
-        key={isDark ? 'dark' : 'light'}
-        url={`https://{s}.basemaps.cartocdn.com/${isDark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`}
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        maxZoom={20}
+        key={`${isDark ? 'dark' : 'light'}-${CARTO_API_KEY ? 'carto' : 'osm'}`}
+        url={tiles.url}
+        attribution={tiles.attribution}
+        maxZoom={tiles.maxZoom}
       />
       <UserMarker lat={userLat} lng={userLng} />
       {sections.length > 0 && <RouteLayer sections={sections} />}
