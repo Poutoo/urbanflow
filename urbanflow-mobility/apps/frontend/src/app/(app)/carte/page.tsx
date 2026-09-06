@@ -242,7 +242,7 @@ export default function CartePage() {
       {/* Indicateur d'erreur géolocalisation */}
       {geo.error && consentGiven && (
         <div className="absolute bottom-24 left-1/2 z-[1000] -translate-x-1/2 rounded-full bg-amber-100 px-4 py-2 text-sm text-amber-800 shadow dark:bg-amber-500/10 dark:text-amber-400 dark:shadow-none">
-          Position approximative — {geo.error}
+          Position approximative
         </div>
       )}
 
